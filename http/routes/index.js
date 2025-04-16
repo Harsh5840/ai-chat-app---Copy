@@ -5,7 +5,7 @@ const { accountRouter } = require("./account");
 const mainRouter = Router();
 
 mainRouter.use("/user", userRouter);
-mainRouter.use("/account", accountRouter);
+mainRouter.use("/dashboard", accountRouter);
 
 
 module.exports = {
