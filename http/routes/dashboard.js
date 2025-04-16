@@ -1,28 +1,19 @@
-// routes/dashboard.ts
-import express from 'express';
-const { PrismaClient } = require('@prisma/client');
-
-const dashboardRouter = express.Router();
+import { PrismaClient } from "@prisma/client";
+import { authMiddleware } from "../middleware/middleware";
 const prisma = new PrismaClient();
 
-dashboardRouter.get('/', async (req, res) => {
+// GET /dashboard
+    
+    router.get('/', authMiddleware ,async (req, res) => {
   try {
-    const assistants = await prisma.gptAssistant.findMany({
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        imageUrl: true,
-        prompt: true
+    const rooms = await prisma.room.findMany({
+      include: {
+        assistant: true, // include GPT assistant details
       },
-      orderBy: { name: 'asc' },
     });
-
-    res.json(assistants);
+    res.json(rooms);
   } catch (error) {
-    console.error('Error fetching assistants:', error);
-    res.status(500).json({ error: 'Failed to load GPT assistants' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to load rooms' });
   }
 });
-
-export default router;

@@ -5,6 +5,7 @@ const app = express();
 const cors = require("cors");
 const { mainRouter } = require("./routes/index");
 
+
 //middlewares should be above router as order does matter here
 app.use(cors());
 app.use(express.json()); //we added this line to parse the request body as json

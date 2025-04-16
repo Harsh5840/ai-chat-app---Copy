@@ -1,65 +1,56 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { generateResponse } from '../utils/openai.js'; // your wrapper function
-import authMiddleware from '../middleware/middleware.js';
+import { OpenAI } from 'openai';
 
 const chatRouter = express.Router();
 const prisma = new PrismaClient();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-chatRouter.get('/:roomId', authMiddleware, async (req, res) => {
-  const roomId = parseInt(req.params.roomId);
-
-  try {
-    const chats = await prisma.chat.findMany({
-      where: { roomId },
-      orderBy: { id: 'asc' },
-      include: { user: true },
-    });
-
-    res.json(chats);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load chat history' });
-  }
-});
-
-chatRouter.post('/:roomId', authMiddleware, async (req, res) => {
-  const roomId = parseInt(req.params.roomId);
-  const userId = req.user.id;
-  const { content } = req.body;
+// POST /chat
+chatRouter.post('/',authMiddleware, async (req, res) => {
+  const { userId, roomId, content } = req.body;
 
   try {
-    const room = await prisma.room.findUnique({
-      where: { id: roomId },
-      include: { assistant: true },
-    });
-
-    if (!room) return res.status(404).json({ error: 'Room not found' });
-
-    // Save user message
-    await prisma.chat.create({
+    // Save user's message
+    const userMessage = await prisma.chat.create({
       data: {
         content,
-        userId,
-        roomId,
+        user: { connect: { id: userId } },
+        room: { connect: { id: roomId } },
       },
     });
 
-    // Generate GPT response
-    const aiResponse = await generateResponse(room.assistant.prompt, content);
+    // Fetch GPT prompt
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: { assistant: true, chats: { orderBy: { id: 'asc' } } },
+    });
 
-    // Save AI response
-    await prisma.chat.create({
+    const fullPrompt = `${room.assistant.prompt}\n\n${room.chats.map(c => `${c.user.name || 'User'}: ${c.content}`).join('\n')}\nAI:`;
+
+    const gptResponse = await openai.chat.completions.create({
+      messages: [
+        { role: 'system', content: room.assistant.prompt }, 
+        { role: 'user', content: fullPrompt }
+      ],
+      model: 'gpt-3.5-turbo',
+    });
+
+    const reply = gptResponse.choices[0].message.content;
+
+    // Save GPT reply
+    const aiMessage = await prisma.chat.create({
       data: {
-        content: aiResponse,
-        roomId,
-        userId: null, // no user = AI
+        content: reply,
+        user: { connect: { id: userId } }, // or use a dummy AI user
+        room: { connect: { id: roomId } },
       },
     });
 
-    res.json({ reply: aiResponse });
+    res.json({ userMessage, aiMessage });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Something went wrong during chat' });
+    console.error('Chat send error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
