@@ -1,49 +1,64 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" 
   url      = env("DATABASE_URL")
 }
 
 model User {
   id       Int           @id @default(autoincrement())
   email    String        @unique
+  username String
+  password String
   name     String?
   chats    Chat[]
   rooms    Room[]        // rooms created by this user
-  members  RoomMember[]  // rooms this user has joined
+  members  RoomMember[]  // rooms joined by this user
+}
+
+model GptAssistant {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique   // e.g., "DevGPT"
+  description String?            // Short description
+  prompt      String             // GPT system prompt
+  imageUrl    String?            // Optional image/icon
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  room        Room?              // each assistant maps to ONE room
 }
 
 model Room {
-  id          Int           @id @default(autoincrement())
-  name        String
-  description String?       // optional subtitle like "your personal chef assistant"
-  prompt      String?       // system message or GPT persona definition
-  chats       Chat[]
-  userId      Int?          // optional: for private rooms or room creators
-  user        User?         @relation(fields: [userId], references: [id])
-  members     RoomMember[]  // users who have joined this room
+  id             Int            @id @default(autoincrement())
+  name           String         @unique // e.g., "room-DevGPT"
+  description    String?
+  chats          Chat[]
+  userId         Int?
+  user           User?          @relation(fields: [userId], references: [id])
+  assistantId    Int            @unique // each room has ONE assistant
+  assistant      GptAssistant   @relation(fields: [assistantId], references: [id])
+  members        RoomMember[]
 }
 
-model RoomMember { //RoomMember is a user who has joined a room
+model RoomMember {
   id     Int  @id @default(autoincrement())
   userId Int
-  roomId Int  
+  roomId Int
   user   User @relation(fields: [userId], references: [id])
   room   Room @relation(fields: [roomId], references: [id])
 
-  @@unique([userId, roomId]) // prevent duplicate entries
+  @@unique([userId, roomId])
 }
 
 model Chat {
   id        Int      @id @default(autoincrement())
   content   String
-  createdAt DateTime @default(now())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  roomId    Int
+  sender    String   // "USER" or "GPT"
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
   room      Room     @relation(fields: [roomId], references: [id])
+  roomId    Int
+  createdAt DateTime @default(now())
 }
+

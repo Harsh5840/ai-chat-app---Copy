@@ -1,12 +1,13 @@
-
-const { Router} = require("express");
+const { Router } = require("express");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {JSON_WEB_TOKEN_SECRET} = require('../config');
+const { JSON_WEB_TOKEN_SECRET } = require('../config');
 const saltRounds = 10;
 const z = require("zod");
-const {authMiddleware} = require('../middlewares/middleware');
+const { authMiddleware } = require('../middleware/middleware');
 const userRouter = Router();
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 userRouter.use(express.json());
 
@@ -29,11 +30,12 @@ userRouter.post("/signup", async function (req, res) {
         const { email, password, username } = userbody.parse(req.body);
         const hashpassword = await bcrypt.hash(password, saltRounds);
 
-        // ✅ Save user and get `_id`
-        const user = await User.create({
-            email,
-            password: hashpassword,
-            username
+        const user = await prisma.user.create({
+            data: {  //we use small U for the user model as it is a prisma model
+                email,
+                password: hashpassword,
+                username
+            }
         });
 
         // ✅ Generate JWT token with the correct user ID
@@ -61,16 +63,19 @@ userRouter.post("/signin", async function (req, res) {
             .min(6, { message: "min 6 characters are required" })
             .max(100, { message: "max 100 characters are required" }),
     });
-    const { email, password} = userbody.parse(req.body);
+    const { email, password } = userbody.parse(req.body);
+
     try {
-        const user = await User.findOne({
+        const user = await prisma.user.findUnique({
+            where:{
             email: email
+            }
         })
         if (!user) {
             return res.status(403).json({ message: "Invalid credentials" })
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        
+
         if (!isPasswordValid) {
             return res.status(403).json({ message: "Invalid password" })
         }
@@ -94,27 +99,27 @@ userRouter.post("/signin", async function (req, res) {
     }
 });
 
-userRouter.put("/", authMiddleware ,async function (req, res) {    //here we used a put gateway and used middleware and we applied the optional via zod validation
+userRouter.put("/", authMiddleware, async function (req, res) {    //here we used a put gateway and used middleware and we applied the optional via zod validation
     const userbody = z.object({
         email: z.string()
             .email({ message: "Enter a valid Email" })  // Correct email validation
             .optional(),
-    
+
         password: z.string()
             .min(6, { message: "Min 6 characters are required" })
             .max(100, { message: "Max 100 characters are required" })
             .optional(),
-    
+
         username: z.string()
             .optional() // Ensure `.optional()` is correctly placed
-    });    
+    });
     const { email, password, username } = userbody.parse(req.body);
-    try{
-   await User.updateOne({email: email}, {username: username, email: email, password: password})
+    try {
+        await User.updateOne({ email: email }, { username: username, email: email, password: password })
         res.json({
             message: "User updated successfully"
         })
-    }catch(error){
+    } catch (error) {
         console.log(error)
         res.status(500).json({
             message: "An unexpected error occured"
@@ -124,5 +129,5 @@ userRouter.put("/", authMiddleware ,async function (req, res) {    //here we use
 
 
 module.exports = {
-userRouter: userRouter
+    userRouter: userRouter
 }
