@@ -6,6 +6,7 @@ import axios from "axios"
 import { redirect } from "next/navigation"
 
 
+
 export function LoginForm({
   className,
   ...props
@@ -13,12 +14,13 @@ export function LoginForm({
 
   const sendAuth = async () => {
     try{  
-    await axios.post("http://localhost:3000/api/v1/user/signup", {
+    const response = await axios.post("http://localhost:3000/api/v1/user/signup", {
       email: (document.getElementById("email") as HTMLInputElement)?.value,
       password: (document.getElementById("password") as HTMLInputElement)?.value,
       username: (document.getElementById("username") as HTMLInputElement)?.value,     
     })
-    } catch (error) {
+    localStorage.setItem("token", response.data.token)
+  } catch (error) {
       console.log(error)
     }
     console.log("Sending auth request")

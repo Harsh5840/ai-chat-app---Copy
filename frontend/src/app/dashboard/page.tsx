@@ -1,32 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import axiosAuth from "@/lib/axiosAuth"
 
 export default function Dashboard() {
   const [greeting, setGreeting] = useState("")
+  const [rooms, setRooms] = useState<{ id: string; name: string; description?: string }[]>([])   //important
+  const router = useRouter()
 
   useEffect(() => {
     const getGreeting = () => {
       const hour = new Date().getHours()
-
-      if (hour >= 5 && hour < 12) {
-        return "Good morning"
-      } else if (hour >= 12 && hour < 17) {
-        return "Good afternoon"
-      } else if (hour >= 17 && hour < 21) {
-        return "Good evening"
-      } else {
-        return "Good night"
-      }
+      if (hour >= 5 && hour < 12) return "Good morning"
+      else if (hour >= 12 && hour < 17) return "Good afternoon"
+      else if (hour >= 17 && hour < 21) return "Good evening"
+      else return "Good night"
     }
 
     setGreeting(getGreeting())
 
-    // Update greeting every minute
     const interval = setInterval(() => {
       setGreeting(getGreeting())
     }, 60000)
@@ -34,44 +31,18 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  const cards = [
-    {
-      title: "Analytics Overview",
-      description: "View your website traffic and conversion metrics at a glance.",
-      buttonText: "View Analytics",
-      imageAlt: "Analytics chart",
-    },
-    {
-      title: "Recent Orders",
-      description: "Check the status of recent customer orders and shipments.",
-      buttonText: "Manage Orders",
-      imageAlt: "Order list",
-    },
-    {
-      title: "Inventory Status",
-      description: "Monitor stock levels and get alerts for low inventory items.",
-      buttonText: "Check Inventory",
-      imageAlt: "Inventory items",
-    },
-    {
-      title: "Customer Insights",
-      description: "Analyze customer behavior and preferences to improve engagement.",
-      buttonText: "View Insights",
-      imageAlt: "Customer data",
-    },
-    {
-      title: "Marketing Campaigns",
-      description: "Track the performance of your current marketing initiatives.",
-      buttonText: "View Campaigns",
-      imageAlt: "Marketing graph",
-    },
-    {
-      title: "System Settings",
-      description: "Configure your dashboard preferences and notification settings.",
-      buttonText: "Open Settings",
-      imageAlt: "Settings interface",
-    },
-  ]
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await axiosAuth.get("http://localhost:3000/api/v1/room")
+        setRooms(response.data.rooms)
+      } catch (err) {
+        console.error("Error fetching rooms:", err)
+      }
+    }
+
+    fetchRooms()
+  }, [])
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-10">
@@ -81,26 +52,25 @@ export default function Dashboard() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card, index) => (
-          <Card key={index} className="flex h-full flex-col overflow-hidden">
+        {rooms.map((room) => (
+          <Card key={room.id} className="flex h-full flex-col overflow-hidden">
             <div className="aspect-video w-full overflow-hidden">
-            
               <Image
-                src={`/placeholder.svg?height=200&width=400`}
-                alt={card.imageAlt}
+                src={`/images/${room.name.toLowerCase()}.jpeg`} // make sure your image naming matches room names
+                alt={room.name}
                 width={400}
                 height={200}
                 className="h-full w-full object-cover transition-all hover:scale-105"
               />
             </div>
             <CardHeader>
-              <CardTitle>{card.title}</CardTitle>
-              <CardDescription>{card.description}</CardDescription>
+              <CardTitle>{`room-${room.name}`}</CardTitle>
+              <CardDescription>{room.description || "Your AI assistant room"}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow">{/* Card content can be expanded here */}</CardContent>
+            <CardContent className="flex-grow" />
             <CardFooter>
-              <Button className="w-full">
-                {card.buttonText}
+              <Button className="w-full" onClick={() => router.push(`/room/${room.name}`)}>
+                Enter {room.name}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
