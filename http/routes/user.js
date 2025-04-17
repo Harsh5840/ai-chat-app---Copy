@@ -1,133 +1,107 @@
-const { Router } = require("express");
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { JSON_WEB_TOKEN_SECRET } = require('../config');
-const saltRounds = 10;
-const z = require("zod");
-const { authMiddleware } = require('../middleware/middleware');
+import express, { Router } from "express";
+import { hash, compare } from "bcrypt";
+import jwt from "jsonwebtoken";
+import  {JSON_WEB_TOKEN_SECRET } from "../config.js";
+import { object, string } from "zod";
+import { authMiddleware } from "../middleware/middleware.js";
+import { PrismaClient } from "@prisma/client";
+
 const userRouter = Router();
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const saltRounds = 10;
 
 userRouter.use(express.json());
 
-userRouter.post("/signup", async function (req, res) {
-    try {
-        const userbody = z.object({
-            email: z.string().email({
-                required_error: "Email required",
-                invalid_type_error: "Enter valid Email",
-            }),
-            password: z.string()
-                .min(6, { message: "Min 6 characters are required" })
-                .max(100, { message: "Max 100 characters are required" }),
-            username: z.string({
-                required_error: "Username required",
-                invalid_type_error: "Enter a string"
-            })
-        });
+// ✅ Signup
+userRouter.post("/signup", async (req, res) => {
+  try {
+    const schema = object({
+      email: string().email(),
+      password: string().min(6).max(100),
+      username: string()
+    });
 
-        const { email, password, username } = userbody.parse(req.body);
-        const hashpassword = await bcrypt.hash(password, saltRounds);
-
-        const user = await prisma.user.create({
-            data: {  //we use small U for the user model as it is a prisma model
-                email,
-                password: hashpassword,
-                username
-            }
-        });
-
-        // ✅ Generate JWT token with the correct user ID
-        const token = jwt.sign({ id: user._id }, JSON_WEB_TOKEN_SECRET, { expiresIn: "1h" });
-
-        res.json({
-            token: token,
-            message: "User signed up successfully"
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "An unexpected error occurred" });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "error" });
     }
+
+    const { email, password, username } = parsed.data;
+    const hashedPassword = await hash(password, saltRounds);
+
+    const user = await prisma.user.create({
+      data: { email, password: hashedPassword, username }
+    });
+
+    const token = jwt.sign({ id: user.id }, JSON_WEB_TOKEN_SECRET, { expiresIn: "1h" });
+
+    res.json({ token, message: "User signed up successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "An unexpected error occurred" });
+  }
 });
 
+// ✅ Signin
+userRouter.post("/signin", async (req, res) => {
+  const schema = object({
+    email: string().email(),
+    password: string().min(6).max(100)
+  });
 
-userRouter.post("/signin", async function (req, res) {
-    const userbody = z.object({
-        email: z.string().email({
-            required_error: "Email required",
-            invalid_type_error: "Enter valid Email",
-        }),
-        password: z.string()
-            .min(6, { message: "min 6 characters are required" })
-            .max(100, { message: "max 100 characters are required" }),
-    });
-    const { email, password } = userbody.parse(req.body);
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.errors[0].message });
+  }
 
-    try {
-        const user = await prisma.user.findUnique({
-            where:{
-            email: email
-            }
-        })
-        if (!user) {
-            return res.status(403).json({ message: "Invalid credentials" })
-        }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+  const { email, password } = parsed.data;
 
-        if (!isPasswordValid) {
-            return res.status(403).json({ message: "Invalid password" })
-        }
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
 
-        const token = jwt.sign({
-            id: user._id
-        },
-            JSON_WEB_TOKEN_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        res.json({
-            token: token,
-            message: "User signed in succesfully"
-        })
-    } catch (error) {
-        console.log(error)
-        res.status(500).json({
-            message: "An unexpected error occured"
-        })
+    if (!user || !(await compare(password, user.password))) {
+      return res.status(403).json({ message: "Invalid credentials" });
     }
+
+    const token = sign({ id: user.id }, JSON_WEB_TOKEN_SECRET, { expiresIn: "1h" });
+
+    res.json({ token, message: "User signed in successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "An unexpected error occurred" });
+  }
 });
 
-userRouter.put("/", authMiddleware, async function (req, res) {    //here we used a put gateway and used middleware and we applied the optional via zod validation
-    const userbody = z.object({
-        email: z.string()
-            .email({ message: "Enter a valid Email" })  // Correct email validation
-            .optional(),
+// ✅ Update user (requires auth)
+userRouter.put("/", authMiddleware, async (req, res) => {
+  const schema = object({
+    email: string().email().optional(),
+    password: string().min(6).max(100).optional(),
+    username: string().optional()
+  });
 
-        password: z.string()
-            .min(6, { message: "Min 6 characters are required" })
-            .max(100, { message: "Max 100 characters are required" })
-            .optional(),
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.errors[0].message });
+  }
 
-        username: z.string()
-            .optional() // Ensure `.optional()` is correctly placed
-    });
-    const { email, password, username } = userbody.parse(req.body);
-    try {
-        await User.updateOne({ email: email }, { username: username, email: email, password: password })
-        res.json({
-            message: "User updated successfully"
-        })
-    } catch (error) {
-        console.log(error)
-        res.status(500).json({
-            message: "An unexpected error occured"
-        })
+  const updateData = parsed.data;
+
+  try {
+    if (updateData.password) {
+      updateData.password = await hash(updateData.password, saltRounds);
     }
-})
 
+    const updated = await prisma.user.update({
+      where: { id: req.userId }, // from authMiddleware
+      data: updateData
+    });
 
-module.exports = {
-    userRouter: userRouter
-}
+    res.json({ message: "User updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "An unexpected error occurred" });
+  }
+});
+
+export { userRouter };

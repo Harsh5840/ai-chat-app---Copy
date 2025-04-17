@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma/client";
-import { authMiddleware } from "../middleware/middleware";
+import  {authMiddleware}  from "../middleware/middleware.js";
 const prisma = new PrismaClient();
+import { Router } from "express";
+const dashboardRouter = Router();
 
 // GET /dashboard
     
-    router.get('/', authMiddleware ,async (req, res) => {
+  dashboardRouter.get('/', authMiddleware ,async (req, res) => {
   try {
     const rooms = await prisma.room.findMany({
       include: {
@@ -17,3 +19,5 @@ const prisma = new PrismaClient();
     res.status(500).json({ error: 'Failed to load rooms' });
   }
 });
+
+export { dashboardRouter };

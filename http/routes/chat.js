@@ -58,4 +58,4 @@ chatRouter.post('/', async (req, res) => {
   }
 });
 
-export default chatRouter;
+export { chatRouter };

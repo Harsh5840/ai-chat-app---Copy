@@ -1,5 +1,5 @@
-const { JSON_WEB_TOKEN_SECRET } = require('../config');
-const jwt = require("jsonwebtoken");
+import  {JSON_WEB_TOKEN_SECRET } from '../config.js';
+import jwt from "jsonwebtoken";
 
 
 const authMiddleware = async (req, res, next) => {
@@ -24,6 +24,4 @@ const authMiddleware = async (req, res, next) => {
         })
     }
 }
-module.exports = {
-    authMiddleware: authMiddleware
-}       
+export { authMiddleware };

@@ -1,6 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authMiddleware } from '../middleware/middleware';
+import  {authMiddleware}  from '../middleware/middleware.js';
 
 const roomRouter = express.Router();
 const prisma = new PrismaClient();
@@ -65,4 +65,4 @@ roomRouter.post('/:name/chat',authMiddleware, async (req, res) => {
   res.json(newChat);
 });
 
-export default roomRouter;
+export {roomRouter};
