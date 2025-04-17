@@ -1,14 +1,15 @@
 import { WebSocketServer } from 'ws';
-import { PrismaClient } from  "../http/node_modules/@prisma/client/default.js"; 
+import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 const wss = new WebSocketServer({ port: 6000 });
 
-const rooms = {}; // { roomName: [socket, ...] }
+const rooms = {}; // Store WebSocket connections by room name
 
 wss.on('connection', (socket) => {
   let currentRoom = null;
-    console.log("server working");
+
   socket.on('message', async (data) => {
     const msg = JSON.parse(data);
 
@@ -22,34 +23,34 @@ wss.on('connection', (socket) => {
       rooms[currentRoom].push(socket);
       console.log(`User joined ${currentRoom}`);
     }
+
     if (msg.type === 'chat') {
       const { content, roomName, userId } = msg;
 
-      // Save message to DB
-      await prisma.chat.create({
-        data: {
+      // Send the message to the HTTP server to handle OpenAI and database logic
+      try {
+        const response = await axios.post('http://localhost:5000/chat', {
+          userId,
+          roomName,
           content,
-          room: {
-            connect: { name: roomName },
-          },
-          user: {
-            connect: { id: userId },
-          },
-        },
-      });
+        });
 
-      // Broadcast to room
-      const payload = JSON.stringify({
-        type: 'chat',
-        content,
-        sender: userId,
-      });
+        // Broadcast the user's message and GPT response to all users in the room
+        const payload = JSON.stringify({
+          type: 'chat',
+          userMessage: content,
+          aiMessage: response.data.aiMessage,
+          sender: userId,
+        });
 
-      rooms[roomName]?.forEach((client) => { //here we are sending the message to all the clients in the room
-        if (client.readyState === 1) {
-          client.send(payload);
-        }
-      });
+        rooms[roomName]?.forEach((client) => {
+          if (client.readyState === 1) {
+            client.send(payload);
+          }
+        });
+      } catch (err) {
+        console.error('Error processing message:', err);
+      }
     }
   });
 
