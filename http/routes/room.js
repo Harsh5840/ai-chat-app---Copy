@@ -7,8 +7,6 @@ const prisma = new PrismaClient();
 
 // GET /room/:name - e.g. room-DevGPT
 
-
-
 roomRouter.get('/:name',authMiddleware, async (req, res) => {
   try {
     const { name } = req.params;
