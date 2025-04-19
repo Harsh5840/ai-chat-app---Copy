@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import { hash, compare } from "bcrypt";
 import jwt from "jsonwebtoken";
-import  {JSON_WEB_TOKEN_SECRET } from "../config.js";
+import  {JSON_WEB_TOKEN_SECRET} from "../config.js";
 import { object, string } from "zod";
 import { authMiddleware } from "../middleware/middleware.js";
 import { PrismaClient } from "@prisma/client";
@@ -32,6 +32,7 @@ userRouter.post("/signup", async (req, res) => {
     const user = await prisma.user.create({
       data: { email, password: hashedPassword, username }
     });
+    console.log("JWT Secret:", JSON_WEB_TOKEN_SECRET);
 
     const token = jwt.sign({ id: user.id }, JSON_WEB_TOKEN_SECRET, { expiresIn: "1h" });
 

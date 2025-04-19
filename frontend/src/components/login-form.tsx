@@ -37,7 +37,7 @@ export function LoginForm({
       <div className="grid gap-6">
       <div className="grid gap-3">
           <Label htmlFor="email">Username</Label>
-          <Input id="username" type="email" placeholder="Enter your username" required />
+          <Input id="username" type="text" placeholder="Enter your username" required />
         </div>
         <div className="grid gap-3">
           <Label htmlFor="email">Email</Label>
