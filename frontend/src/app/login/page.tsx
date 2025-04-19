@@ -26,6 +26,7 @@ export default function LoginPage() {
         <Image
           src="/images/login.jpeg"
           fill
+          priority
         //   width={640}
         //   height={480}
           alt="Image"

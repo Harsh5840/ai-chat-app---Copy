@@ -6,19 +6,7 @@ const roomRouter = express.Router();
 const prisma = new PrismaClient();
 
 // GET /room/:name - e.g. room-DevGPT
-roomRouter.get("/" , authMiddleware,async (req, res) => {
-  try {
-    const rooms = await prisma.room.findMany({
-      include: {
-        assistant: true,
-      },
-    });
-    res.json(rooms);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to load rooms' });
-  }
-});
+
 
 
 roomRouter.get('/:name',authMiddleware, async (req, res) => {

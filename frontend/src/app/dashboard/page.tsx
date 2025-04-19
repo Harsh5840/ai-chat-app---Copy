@@ -33,15 +33,15 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await axiosAuth.get("http://localhost:3000/api/v1/room")
-        setRooms(response.data.rooms)
-      } catch (err) {
-        console.error("Error fetching rooms:", err)
+        const response = await axiosAuth.get("http://localhost:3000/api/v1/dashboard"); // token is auto attached
+        setRooms(response.data.rooms);
+        console.log("Fetched rooms:", response.data.rooms);
+      } catch (error) {
+        console.error("Error fetching rooms:",error);
       }
-    }
-
-    fetchRooms()
-  }, [])
+    };    
+    fetchRooms();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-10">
@@ -51,11 +51,11 @@ export default function Dashboard() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {rooms.map((room) => (
+        {rooms.map((room: { id: string; name: string; description?: string }) => (
           <Card key={room.id} className="flex h-full flex-col overflow-hidden">
             <div className="aspect-video w-full overflow-hidden">
               <Image
-                src={`/images/${room.name.toLowerCase()}.jpeg`} // make sure your image naming matches room names
+                src={`/images/login.jpeg`} // make sure your image naming matches room names
                 alt={room.name}
                 width={400}
                 height={200}

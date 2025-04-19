@@ -1,33 +1,41 @@
+'use client'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import axios from "axios"
-import { redirect } from "next/navigation"
-
+import { useRouter } from "next/navigation"
 
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter();
 
-  const sendAuth = async () => {
-    try{  
-    const response = await axios.post("http://localhost:3000/api/v1/user/signup", {
-      email: (document.getElementById("email") as HTMLInputElement)?.value,
-      password: (document.getElementById("password") as HTMLInputElement)?.value,
-      username: (document.getElementById("username") as HTMLInputElement)?.value,     
-    })
-    localStorage.setItem("token", response.data.token)
-  } catch (error) {
-      console.log(error)
+  const sendAuth = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form default submission
+    try {  
+      const response = await axios.post("http://localhost:3000/api/v1/user/signup", {
+        email: (document.getElementById("email") as HTMLInputElement)?.value,
+        password: (document.getElementById("password") as HTMLInputElement)?.value,
+        username: (document.getElementById("username") as HTMLInputElement)?.value,     
+      });
+      
+      if (response.data && response.data.token) {
+        window.localStorage.setItem("token", response.data.token);
+        console.log("Token stored:", response.data.token); // Debug log
+        router.push("/dashboard");
+      } else {
+        console.error("No token received from server");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
     }
-    console.log("Sending auth request")
-    redirect("/dashboard")
   }
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form onSubmit={sendAuth} className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Login to your account</h1>
         <p className="text-muted-foreground text-sm text-balance">
@@ -49,7 +57,7 @@ export function LoginForm({
           </div>
           <Input id="password" type="password" placeholder="Enter your password" required />
         </div>
-        <Button onClick={sendAuth} type="submit" className="w-full">
+        <Button type="submit" className="w-full">
           Sign Up
         </Button>
           </div>        

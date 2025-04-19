@@ -27,6 +27,7 @@ userRouter.post("/signup", async (req, res) => {
     }
 
     const { email, password, username } = parsed.data;
+    console.log(email, password, username)
     const hashedPassword = await hash(password, saltRounds);
 
     const user = await prisma.user.create({
