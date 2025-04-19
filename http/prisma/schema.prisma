@@ -31,7 +31,7 @@ model GptAssistant {
 
 model Room {
   id             Int            @id @default(autoincrement())
-  name           String         @unique // e.g., "room-DevGPT"
+  name           String        
   description    String?
   chats          Chat[]
   userId         Int?

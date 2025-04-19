@@ -9,16 +9,12 @@ import { mainRouter}  from "./routes/index.js";
 
 //middlewares should be above router as order does matter here
 app.use(cors());
-app.use(json()); //we added this line to parse the request body as json
+app.use(express.json()); //we added this line to parse the request body as json
 
 //main router
 app.use("/api/v1", mainRouter);
 
-async function main() {
 
-  app.listen(3000, () => {
-    console.log("app is running");
-  }); 
-}
-
-main();
+app.listen(3000, () => {
+  console.log("app is running");
+}); 
