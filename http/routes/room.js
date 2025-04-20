@@ -26,7 +26,7 @@ roomRouter.get('/:name',authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    res.json(room);
+    res.json(room , req.user);
   } catch (err) {
     console.error('Room fetch error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -51,4 +51,4 @@ roomRouter.post('/:name/chat',authMiddleware, async (req, res) => {
   res.json(newChat);
 });
 
-export {roomRouter};
+export { roomRouter };

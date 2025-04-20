@@ -23,8 +23,9 @@ export function LoginForm({
       });
       
       if (response.data && response.data.token) {
+        window.localStorage.setItem("userId", response.data.userId);
         window.localStorage.setItem("token", response.data.token);
-        console.log("Token stored:", response.data.token); // Debug log
+        console.log("Token stored:", response.data.token, response.data.userId); // Debug log
         router.push("/dashboard");
       } else {
         console.error("No token received from server");

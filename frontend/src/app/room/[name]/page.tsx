@@ -1,46 +1,107 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import axiosAuth from "@/lib/axiosAuth";
-import ChatUI from "@/app/chatUI/page";
+import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+
+type ChatMessage = {
+  sender: 'user' | 'ai'
+  content: string
+}
 
 export default function RoomPage() {
-  const { name } = useParams() as { name: string };
-  const [roomDetails, setRoomDetails] = useState<{
-    id: string;
-    name: string;
-    description?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { name } = useParams() as { name: string }
+  const [socket, setSocket] = useState<WebSocket | null>(null)
+  const [input, setInput] = useState('')
+  const [chat, setChat] = useState<ChatMessage[]>([])
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Scroll to bottom on new message
   useEffect(() => {
-    const fetchRoom = async () => {
-      try {
-        const res = await axiosAuth.get(`/room/${name}`);
-        setRoomDetails(res.data);
-      } catch (error) {
-        console.error("Failed to fetch room:", error);
-      } finally {
-        setLoading(false);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chat])
+
+  // Setup WebSocket
+  useEffect(() => {
+    if (!userId) return
+
+    const ws = new WebSocket('ws://localhost:6000')
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'join', roomName: name }))
+      console.log(`Joined room: ${name}`)
+    }
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data)
+
+      if (msg.type === 'chat') {
+        setChat((prev) => [
+          ...prev,
+          { sender: 'user', content: msg.userMessage },
+          { sender: 'ai', content: msg.aiMessage.content },
+        ])
       }
-    };
+    }
 
-    if (name) fetchRoom();
-  }, [name]);
+    ws.onerror = (err) => {
+      console.error('WebSocket error:', err)
+    }
 
-  if (loading) return <div className="p-6">Loading room...</div>;
-  if (!roomDetails) return <div className="p-6">Room not found.</div>;
+    ws.onclose = () => {
+      console.log('Disconnected from WebSocket')
+    }
+
+    setSocket(ws)
+
+    return () => {
+      ws.close()
+    }
+  }, [name, userId])
+
+  const sendMessage = () => {
+    if (!input.trim() || !socket || !userId) return
+
+    const msg = {
+      type: 'chat',
+      content: input,
+      userId,
+      roomName: name,
+    }
+
+    socket.send(JSON.stringify(msg))
+    setInput('')
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-2">Room: {roomDetails.name}</h1>
-      <p className="text-muted-foreground">{roomDetails.description || "No description provided."}</p>
-
-      <ChatUI/>
-      <div className="mt-6 border p-4 rounded-lg">
-        <p>This is where your AI assistant or chat messages would go for <strong>{roomDetails.name}</strong>.</p>
+    <div className="flex flex-col min-h-screen p-6 bg-background">
+      <h1 className="text-2xl font-bold mb-4">Room: {name}</h1>
+      <div className="flex-1 overflow-y-auto mb-4 space-y-2">
+        {chat.map((message, idx) => (
+          <div
+            key={idx}
+            className={`p-3 rounded-lg max-w-lg ${
+              message.sender === 'user'
+                ? 'bg-blue-500 text-white self-end ml-auto'
+                : 'bg-gray-100 text-black'
+            }`}
+          >
+            {message.content}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="flex gap-2">
+        <Input
+          placeholder="Type your message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+        />
+        <Button onClick={sendMessage}>Send</Button>
       </div>
     </div>
-  );
+  )
 }
