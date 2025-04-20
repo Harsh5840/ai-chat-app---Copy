@@ -1,41 +1,38 @@
 import { WebSocketServer } from 'ws';
-import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 
-const prisma = new PrismaClient();
-const wss = new WebSocketServer({ port: 6000 });
+const wss = new WebSocketServer({ port: 7070 }, () => {
+  console.log('WebSocket server is running on port 7070');
+});
 
-const rooms = {}; // Store WebSocket connections by room name
+const rooms = {}; // Store WebSocket clients per room
 
 wss.on('connection', (socket) => {
   let currentRoom = null;
+  console.log('WebSocket connection established');
 
   socket.on('message', async (data) => {
     const msg = JSON.parse(data);
+    console.log('Received message:', msg);
 
     if (msg.type === 'join') {
-      const { roomName } = msg;
-      currentRoom = roomName;
+      currentRoom = msg.roomName;
 
-      if (!rooms[currentRoom]) {
-        rooms[currentRoom] = [];
-      }
+      if (!rooms[currentRoom]) rooms[currentRoom] = [];
       rooms[currentRoom].push(socket);
-      console.log(`User joined ${currentRoom}`);
+      console.log(`User joined room: ${currentRoom}`);
     }
 
     if (msg.type === 'chat') {
       const { content, roomName, userId } = msg;
 
-      // Send the message to the HTTP server to handle OpenAI and database logic
       try {
-        const response = await axios.post('http://localhost:5000/chat', {
+        const response = await axios.post('http://localhost:3000/api/v1/chat', {
           userId,
           roomName,
           content,
         });
 
-        // Broadcast the user's message and GPT response to all users in the room
         const payload = JSON.stringify({
           type: 'chat',
           userMessage: content,
@@ -43,13 +40,14 @@ wss.on('connection', (socket) => {
           sender: userId,
         });
 
+        // Broadcast to all in room
         rooms[roomName]?.forEach((client) => {
           if (client.readyState === 1) {
             client.send(payload);
           }
         });
       } catch (err) {
-        console.error('Error processing message:', err);
+        console.error('Error processing message:', err.message);
       }
     }
   });

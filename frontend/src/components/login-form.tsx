@@ -22,7 +22,7 @@ export function LoginForm({
         username: (document.getElementById("username") as HTMLInputElement)?.value,     
       });
       
-      if (response.data && response.data.token) {
+      if (response.data && response.data.token && response.data.userId) {
         window.localStorage.setItem("userId", response.data.userId);
         window.localStorage.setItem("token", response.data.token);
         console.log("Token stored:", response.data.token, response.data.userId); // Debug log

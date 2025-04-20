@@ -15,19 +15,17 @@ export default function RoomPage() {
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [input, setInput] = useState('')
   const [chat, setChat] = useState<ChatMessage[]>([])
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
+  const userId = typeof window !== 'undefined' ? window.localStorage.getItem('userId') : null
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chat])
 
-  // Setup WebSocket
   useEffect(() => {
     if (!userId) return
 
-    const ws = new WebSocket('ws://localhost:6000')
+    const ws = new WebSocket('ws://localhost:7070')
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', roomName: name }))
@@ -41,7 +39,7 @@ export default function RoomPage() {
         setChat((prev) => [
           ...prev,
           { sender: 'user', content: msg.userMessage },
-          { sender: 'ai', content: msg.aiMessage.content },
+          { sender: 'ai', content: msg.aiMessage?.content || '[No reply]' },
         ])
       }
     }
