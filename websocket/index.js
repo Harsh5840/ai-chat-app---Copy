@@ -25,7 +25,16 @@ wss.on('connection', (socket) => {
 
     if (msg.type === 'chat') {
       const { content, roomName, userId } = msg;
-
+      
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'typing',
+            roomName,
+          }))
+        }
+      })
+      
       try {
         const response = await axios.post('http://localhost:3000/api/v1/chat', {
           userId,

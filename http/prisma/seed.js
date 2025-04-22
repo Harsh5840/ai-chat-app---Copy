@@ -63,11 +63,11 @@ async function seed() {
       },
     });
   }
-  console.log(`🌱 Seeded ${assistants.length} GPT assistants and their rooms.`);
+  console.log(`Seeded ${assistants.length} GPT assistants and their rooms.`);
 }
 seed()
   .catch((e) => {
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => prisma.$disconnect());   //IMPORTANT

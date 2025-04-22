@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 //it should be on top of the file and remember to run npm i dotenv
-import express, { json } from "express";
+import express from "express";
 const app = express();
 import cors from "cors";
 import { mainRouter}  from "./routes/index.js";
