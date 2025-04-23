@@ -67,7 +67,7 @@ chatRouter.post('/', async (req, res) => {
       },
     });
 
-    // Restrict the assistant with a description-based prompt
+
     const systemPrompt = `You are a helpful assistant with the following description: "${room.assistant.description}". You are only allowed to answer questions based on your description. If a question is outside of your knowledge domain, respond with "Sorry, I can only answer questions related to [your description]".`;
 
     const messages = [
@@ -95,10 +95,7 @@ chatRouter.post('/', async (req, res) => {
 
     const reply = gptResponse.data.choices[0].message.content;
 
-    // Check if the response is within the valid scope
-    if (!reply.includes('Sorry, I can only answer questions related to')) {
-      // You can further filter out the response here, if needed
-    }
+   
 
     const aiMessage = await prisma.chat.create({
       data: {

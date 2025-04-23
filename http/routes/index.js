@@ -5,7 +5,6 @@ import {roomRouter} from "./room.js";
 import {chatRouter} from "./chat.js";             
 const mainRouter = Router()
 
-
 mainRouter.use("/user", userRouter);
 mainRouter.use("/dashboard", dashboardRouter);
 mainRouter.use("/room", roomRouter);

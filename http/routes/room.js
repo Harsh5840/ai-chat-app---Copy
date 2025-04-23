@@ -26,7 +26,7 @@ roomRouter.get('/:name',authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    res.json(room , req.user);
+    res.json(room , req.user);  //we sent the req.user because we need it in the chats
   } catch (err) {
     console.error('Room fetch error:', err);
     res.status(500).json({ error: 'Server error' });

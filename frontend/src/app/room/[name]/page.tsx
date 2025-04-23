@@ -40,7 +40,8 @@ export default function RoomPage() {
     }
 
     fetchHistory()
-  }, [name])
+  }, [name])   
+
 
   // WebSocket connection
   useEffect(() => {

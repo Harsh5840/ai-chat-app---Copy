@@ -37,7 +37,7 @@ userRouter.post("/signup", async (req, res) => {
 
     const token = jwt.sign({ id: user.id }, JSON_WEB_TOKEN_SECRET, { expiresIn: "1h" });
     const userId = user.id;
-    res.json({ token, userId, message: "User signed up successfully" });
+    res.json({ token, userId, message: "User signed up successfully" });    //we passed userId too 
     console.log("User ID:", user.id);
   } catch (err) {
     console.error(err);

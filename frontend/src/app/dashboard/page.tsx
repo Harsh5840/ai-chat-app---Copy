@@ -82,7 +82,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="flex-grow" />
             <CardFooter>
-              <Button className="w-full" onClick={() => router.push(`/room/${room.name}`)}>
+              <Button className="w-full" onClick={() => router.push(`/room/${room.name}`)}>     
+                {/* //important */}
                 Enter {room.name}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
