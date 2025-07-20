@@ -54,7 +54,7 @@ export default function RoomPage() {
       console.log(`Joined room: ${name}`)
     }
 
-    ws.onmessage = (event) => {
+    ws.onmessage = (event) => {   //when a message is received
       const msg = JSON.parse(event.data)
 
       if (msg.type === 'chat') {
