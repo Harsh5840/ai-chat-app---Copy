@@ -12,7 +12,6 @@ const saltRounds = 10;
 
 userRouter.use(express.json());
 
-// ✅ Signup
 userRouter.post("/signup", async (req, res) => {
   try {
     const schema = object({
@@ -45,7 +44,7 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Signin
+
 userRouter.post("/signin", async (req, res) => {
   const schema = object({
     email: string().email(),
@@ -75,7 +74,7 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-// ✅ Update user (requires auth)
+
 userRouter.put("/", authMiddleware, async (req, res) => {
   const schema = object({
     email: string().email().optional(),
@@ -96,7 +95,7 @@ userRouter.put("/", authMiddleware, async (req, res) => {
     }
 
     const updated = await prisma.user.update({
-      where: { id: req.userId }, // from authMiddleware
+      where: { id: req.userId }, 
       data: updateData
     });
 
