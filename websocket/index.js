@@ -28,6 +28,13 @@ wss.on('connection', (socket) => {
 
     if (msg.type === 'chat') {
       const { content, roomName, userId } = msg;
+      let username = 'Unknown';
+      try {
+        const user = await axios.get(`http://localhost:3000/api/v1/user/${userId}`);
+        username = user.data.username || 'Unknown';
+      } catch (e) {
+        console.error('Could not fetch username for chat message', e);
+      }
       
       wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -50,6 +57,7 @@ wss.on('connection', (socket) => {
           userMessage: content,
           aiMessage: response.data.aiMessage,
           sender: userId,
+          username,
         });
 
         // Broadcast to all in room

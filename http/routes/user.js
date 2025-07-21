@@ -107,3 +107,15 @@ userRouter.put("/", authMiddleware, async (req, res) => {
 });
 
 export { userRouter };
+
+userRouter.get("/:id", async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(req.params.id) }
+    });
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "An unexpected error occurred" });
+  }
+});

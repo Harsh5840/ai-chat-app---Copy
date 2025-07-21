@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 type ChatMessage = {
   sender: 'user' | 'ai'
   content: string
+  username?: string
 }
 
 export default function RoomPage() {
@@ -19,7 +20,7 @@ export default function RoomPage() {
   const [chat, setChat] = useState<ChatMessage[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
   const [loadingBot, setLoadingBot] = useState(false)
-  const userId = typeof window !== 'undefined' ? window.localStorage.getItem('userId') : null
+  const userId = typeof window !== 'undefined' ? Number(window.localStorage.getItem('userId')) : null
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -65,8 +66,8 @@ export default function RoomPage() {
         setChat((prev) => {
           const updated: ChatMessage[] = [
             ...prev,
-            { sender: 'user', content: msg.userMessage },
-            { sender: 'ai', content: msg.aiMessage?.content || '[No reply]' },
+            { sender: 'user', content: msg.userMessage, username: msg.username },
+            { sender: 'ai', content: msg.aiMessage?.content || '[No reply]', username: 'Bot' },
           ];
           console.log('Updated chat state:', updated);
           return updated;
@@ -145,6 +146,11 @@ export default function RoomPage() {
                 }`}
                 style={{ alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start' }}
               >
+                {message.username && (
+                  <div className={`text-xs mb-1 ${message.sender === 'user' ? 'text-cyan-300' : 'text-purple-300'}`}>
+                    {message.username}
+                  </div>
+                )}
                 {message.content}
               </div>
             ))
