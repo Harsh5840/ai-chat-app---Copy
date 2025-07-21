@@ -17,10 +17,13 @@ wss.on('connection', (socket) => {
 
     if (msg.type === 'join') {
       currentRoom = msg.roomName;
-
       if (!rooms[currentRoom]) rooms[currentRoom] = [];
-      rooms[currentRoom].push(socket);
+      if (!rooms[currentRoom].includes(socket)) {
+        rooms[currentRoom].push(socket);
+      }
       console.log(`User joined room: ${currentRoom}`);
+      console.log('Room members:', rooms[currentRoom].length);
+      console.log('Room sockets:', rooms[currentRoom].map(s => s._socket && s._socket.remoteAddress));
     }
 
     if (msg.type === 'chat') {
@@ -50,6 +53,9 @@ wss.on('connection', (socket) => {
         });
 
         // Broadcast to all in room
+        if (rooms[roomName]) {
+          console.log(`Broadcasting to ${rooms[roomName].length} clients in room ${roomName}`);
+        }
         rooms[roomName]?.forEach((client) => {
           if (client.readyState === 1) {
             client.send(payload);

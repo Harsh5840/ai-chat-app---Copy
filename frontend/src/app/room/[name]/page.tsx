@@ -60,13 +60,17 @@ export default function RoomPage() {
 
     ws.onmessage = (event) => {   //when a message is received
       const msg = JSON.parse(event.data)
-
+      console.log('WebSocket received:', msg);
       if (msg.type === 'chat') {
-        setChat((prev) => [
-          ...prev,
-          { sender: 'user', content: msg.userMessage },
-          { sender: 'ai', content: msg.aiMessage?.content || '[No reply]' },
-        ])
+        setChat((prev) => {
+          const updated = [
+            ...prev,
+            { sender: 'user', content: msg.userMessage },
+            { sender: 'ai', content: msg.aiMessage?.content || '[No reply]' },
+          ];
+          console.log('Updated chat state:', updated);
+          return updated;
+        })
         setLoadingBot(false)
       }
     }
@@ -96,7 +100,7 @@ export default function RoomPage() {
       roomName,
     }
 
-    setChat((prev) => [...prev, { sender: 'user', content: input }])
+    console.log('Sending message:', msg);
     setInput('')
     setLoadingBot(true)
     socket.send(JSON.stringify(msg))
