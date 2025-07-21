@@ -63,7 +63,7 @@ export default function RoomPage() {
       console.log('WebSocket received:', msg);
       if (msg.type === 'chat') {
         setChat((prev) => {
-          const updated = [
+          const updated: ChatMessage[] = [
             ...prev,
             { sender: 'user', content: msg.userMessage },
             { sender: 'ai', content: msg.aiMessage?.content || '[No reply]' },
