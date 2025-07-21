@@ -29,7 +29,8 @@ export default function RoomPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/v1/chat/history/${name}`)
+        const roomName = name.startsWith('room-') ? name : `room-${name}`;
+        const res = await fetch(`http://localhost:3000/api/v1/chat/history/${roomName}`)
         const data = await res.json()
         if (data.history) setChat(data.history)
       } catch (err) {
@@ -48,10 +49,10 @@ export default function RoomPage() {
     if (!userId) return
 
     const ws = new WebSocket('ws://localhost:7070')
-
+    const roomName = name.startsWith('room-') ? name : `room-${name}`;
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'join', roomName: name }))
-      console.log(`Joined room: ${name}`)
+      ws.send(JSON.stringify({ type: 'join', roomName }))
+      console.log(`Joined room: ${roomName}`)
     }
 
     ws.onmessage = (event) => {   //when a message is received
@@ -84,11 +85,12 @@ export default function RoomPage() {
   const sendMessage = () => {
     if (!input.trim() || !socket || !userId) return
 
+    const roomName = name.startsWith('room-') ? name : `room-${name}`;
     const msg = {
       type: 'chat',
       content: input,
       userId,
-      roomName: name,
+      roomName,
     }
 
     setChat((prev) => [...prev, { sender: 'user', content: input }])
@@ -98,47 +100,70 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-background">
-      <h1 className="text-2xl font-bold mb-4">Room: {name}</h1>
-
-      <div className="flex-1 overflow-y-auto mb-4 space-y-2">
-        {loadingHistory ? (
-          <div className="text-gray-500">Loading previous messages...</div>
-        ) : (
-          chat.map((message, idx) => (
-            <div
-              key={idx}
-              className={`p-3 rounded-lg max-w-lg ${
-                message.sender === 'user'
-                  ? 'bg-blue-500 text-white self-end ml-auto'
-                  : 'bg-gray-100 text-black'
-              }`}
-            >
-              {message.content}
+    <div className="flex flex-col min-h-screen bg-black relative overflow-hidden font-sans">
+      {/* Animated Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 animate-pulse"></div>
+      <div className="fixed inset-0 bg-gradient-to-tr from-pink-900/10 via-transparent to-green-900/10 animate-pulse" style={{animationDelay: '1s'}}></div>
+      <div className="fixed inset-0 bg-gradient-to-bl from-transparent via-indigo-900/10 to-red-900/10 animate-pulse" style={{animationDelay: '2s'}}></div>
+      {/* Fixed header at top */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-black/90 border-b border-cyan-500/10 text-center pt-8 pb-4" style={{backdropFilter: 'blur(8px)'}}>
+        <h1 className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">Room: <span className="text-cyan-400">{name}</span></h1>
+        <div className="h-1 w-20 mx-auto bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full opacity-70 mb-2"></div>
+      </header>
+      {/* Scrollable chat area with top and bottom padding for header and input */}
+      <div className="flex-1 flex flex-col overflow-hidden rounded-none bg-black/70 border-t border-cyan-500/20 shadow-xl backdrop-blur-md w-full">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" style={{ minHeight: 0, paddingTop: '112px', paddingBottom: '96px' }}>
+          {loadingHistory ? (
+            <div className="text-gray-400">Loading previous messages...</div>
+          ) : (
+            chat.map((message, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-xl max-w-lg break-words ${
+                  message.sender === 'user'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white self-end ml-auto shadow-lg'
+                    : 'bg-black/60 text-cyan-100 border border-cyan-500/20 shadow'
+                }`}
+                style={{ alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start' }}
+              >
+                {message.content}
+              </div>
+            ))
+          )}
+          {loadingBot && (
+            <div className="p-3 rounded-xl max-w-lg bg-gray-200 text-gray-600 animate-pulse">
+              AI is typing...
             </div>
-          ))
-        )}
-
-        {loadingBot && (
-          <div className="p-3 rounded-lg max-w-lg bg-gray-200 text-gray-600 animate-pulse">
-            AI is typing...
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
-
-      <div className="flex gap-2">
+      {/* Fixed input at bottom of viewport */}
+      <div className="fixed left-0 right-0 bottom-0 z-30 w-full bg-black/90 border-t border-cyan-500/10 px-2 sm:px-6 py-4 flex gap-2 items-center" style={{backdropFilter: 'blur(8px)'}}>
         <Input
           placeholder="Type your message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          className="flex-1 bg-black/80 text-white border border-cyan-500/30 focus:border-cyan-400 focus:ring-cyan-400 rounded-lg px-4 py-2"
         />
-        <Button onClick={sendMessage} disabled={!input.trim() || loadingBot}>
+        <Button onClick={sendMessage} disabled={!input.trim() || loadingBot} className="bg-gradient-to-r from-cyan-500 to-blue-500 text-black border border-cyan-400/50 shadow-lg hover:from-cyan-400 hover:to-blue-400 font-semibold rounded-lg px-6 py-2">
           Send
         </Button>
       </div>
+      {/* Custom scrollbar styling */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+          border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+      `}</style>
     </div>
   )
 }

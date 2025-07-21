@@ -44,24 +44,22 @@ export function LoginForm({
         </p>
       </div>
       <div className="grid gap-6">
-      <div className="grid gap-3">
-          <Label htmlFor="email">Username</Label>
+        <div className="grid gap-3">
+          <Label htmlFor="username" className="text-gray-200">Username</Label>
           <Input id="username" type="text" placeholder="Enter your username" required />
         </div>
         <div className="grid gap-3">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-gray-200">Email</Label>
           <Input id="email" type="email" placeholder="m@example.com" required />
         </div>
         <div className="grid gap-3">
-          <div className="flex items-center">
-            <Label htmlFor="password">Password</Label>
-          </div>
+          <Label htmlFor="password" className="text-gray-200">Password</Label>
           <Input id="password" type="password" placeholder="Enter your password" required />
         </div>
         <Button type="submit" className="w-full">
           Sign Up
         </Button>
-          </div>        
+      </div>
     </form>
   )
 

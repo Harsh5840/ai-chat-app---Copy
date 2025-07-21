@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -255,7 +256,7 @@ function App() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl"></div>
               <img 
-                src="https://www.lummi.ai/photo/futuristic-robot-with-red-visor-y06wf" 
+                src={`/images/2.png`}
                 alt="Futuristic AI Robot" 
                 className="relative z-10 w-full h-auto rounded-2xl shadow-2xl shadow-cyan-500/30 border border-cyan-500/30"
               />
@@ -301,30 +302,41 @@ function App() {
               Connect with specialized AI assistants, each trained to excel in their field of expertise
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
             {aiRooms.map((room) => {
               const Icon = room.icon;
               return (
-                <div 
-                  key={room.id} 
-                  className={`bg-black/60 backdrop-blur-sm rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border ${room.borderColor} hover:${room.neonColor}`}
+                <div
+                  key={room.id}
+                  className={`relative group bg-black/60 backdrop-blur-xl rounded-3xl shadow-2xl border-2 ${room.borderColor} hover:border-cyan-400/80 hover:shadow-cyan-400/40 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 overflow-hidden`}
+                  style={{ minHeight: '340px' }}
                 >
-                  <div className={`h-32 bg-gradient-to-br ${room.color} relative`}>
-                    <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-                    <div className="absolute bottom-4 left-4">
-                      <Icon className="h-10 w-10 text-white" />
+                  {/* Gradient overlay */}
+                  <div className={`absolute inset-0 z-0 bg-gradient-to-br ${room.color} opacity-30 group-hover:opacity-50 transition-all`}></div>
+                  {/* Icon and Image */}
+                  <div className="flex flex-col items-center justify-center pt-8 pb-4 relative z-10">
+                    <div className="bg-black/40 rounded-full p-4 mb-4 shadow-lg border-2 border-white/10 group-hover:border-cyan-400/40 transition-all">
+                      <Icon className="h-12 w-12 text-white drop-shadow-lg" />
                     </div>
-                    <div className="absolute top-4 right-4 bg-white bg-opacity-20 rounded-full px-3 py-1">
-                      <span className="text-white text-sm font-medium">{room.members} members</span>
-                    </div>
-                    <div className="absolute bottom-4 right-4">
-                      <img src={room.imageUrl} alt={room.name} className="h-10 w-10 rounded-full border-2 border-white shadow" />
-                    </div>
+                    <img src={room.imageUrl} alt={room.name} className="h-16 w-16 rounded-full border-4 border-white shadow-xl mb-2 object-cover bg-white/10" />
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-2">{room.name}</h3>
-                    <p className="text-gray-300 mb-4 leading-relaxed">{room.description}</p>
+                  {/* Room Info */}
+                  <div className="px-8 pb-8 pt-2 flex flex-col items-center relative z-10">
+                    <h3 className="text-2xl font-bold text-white mb-2 text-center drop-shadow-lg">{room.name}</h3>
+                    <p className="text-gray-200 mb-4 text-center leading-relaxed min-h-[48px]">{room.description}</p>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full shadow border border-white/10">
+                        {room.members} members
+                      </span>
+                    </div>
+                    <Link href={`/room/room-${room.name}`}>
+                      <button className="mt-2 px-6 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-black font-semibold shadow-lg hover:from-cyan-400 hover:to-blue-400 hover:scale-105 transition-all border border-cyan-400/50">
+                        Join Room
+                      </button>
+                    </Link>
                   </div>
+                  {/* Glow effect on hover */}
+                  <div className="absolute -inset-1 rounded-3xl pointer-events-none group-hover:shadow-[0_0_40px_10px_rgba(34,211,238,0.3)] transition-all duration-300"></div>
                 </div>
               );
             })}
