@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ArrowLeft } from "lucide-react"
+import { useRouter } from 'next/navigation'
 
 type ChatMessage = {
   sender: 'user' | 'ai'
@@ -19,6 +21,7 @@ export default function RoomPage() {
   const [loadingBot, setLoadingBot] = useState(false)
   const userId = typeof window !== 'undefined' ? window.localStorage.getItem('userId') : null
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -106,9 +109,21 @@ export default function RoomPage() {
       <div className="fixed inset-0 bg-gradient-to-tr from-pink-900/10 via-transparent to-green-900/10 animate-pulse" style={{animationDelay: '1s'}}></div>
       <div className="fixed inset-0 bg-gradient-to-bl from-transparent via-indigo-900/10 to-red-900/10 animate-pulse" style={{animationDelay: '2s'}}></div>
       {/* Fixed header at top */}
-      <header className="fixed top-0 left-0 right-0 z-30 bg-black/90 border-b border-cyan-500/10 text-center pt-8 pb-4" style={{backdropFilter: 'blur(8px)'}}>
-        <h1 className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">Room: <span className="text-cyan-400">{name}</span></h1>
-        <div className="h-1 w-20 mx-auto bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full opacity-70 mb-2"></div>
+      <header className="fixed top-0 left-0 right-0 z-30 bg-black/90 border-b border-cyan-500/10 text-center pt-8 pb-4 flex items-center justify-center" style={{backdropFilter: 'blur(8px)'}}>
+        <a href="/dashboard" className="z-50">
+          <button
+            onClick={() => { console.log('Back button clicked'); router.replace('/dashboard'); }}
+            className="z-50 absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 border border-cyan-500/20 text-cyan-300 transition-all shadow focus:outline-none focus:ring-2 focus:ring-cyan-400 hover:scale-110 hover:shadow-cyan-400/50 hover:drop-shadow-lg hover:bg-cyan-900/60 hover:text-white"
+            aria-label="Back to dashboard"
+            type="button"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+        </a>
+        <div className="w-full">
+          <h1 className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">Room: <span className="text-cyan-400">{name}</span></h1>
+          <div className="h-1 w-20 mx-auto bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full opacity-70 mb-2"></div>
+        </div>
       </header>
       {/* Scrollable chat area with top and bottom padding for header and input */}
       <div className="flex-1 flex flex-col overflow-hidden rounded-none bg-black/70 border-t border-cyan-500/20 shadow-xl backdrop-blur-md w-full">

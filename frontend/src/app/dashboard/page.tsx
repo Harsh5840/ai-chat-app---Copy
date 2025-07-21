@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,12 +61,24 @@ export default function Dashboard() {
       <div className="fixed inset-0 bg-gradient-to-tr from-pink-900/10 via-transparent to-green-900/10 animate-pulse" style={{animationDelay: '1s'}}></div>
       <div className="fixed inset-0 bg-gradient-to-bl from-transparent via-indigo-900/10 to-red-900/10 animate-pulse" style={{animationDelay: '2s'}}></div>
       <div className="relative z-10 max-w-6xl mx-auto px-4 pb-16">
-        <header className="pt-16 pb-6 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg mb-2 animate-fade-in">{greeting}, <span className="text-cyan-400">User!</span></h1>
-          <p className="mt-2 text-lg text-gray-300 max-w-2xl mx-auto animate-fade-in-slow">Welcome to your dashboard. Here you can select the GPT helper you want to use.</p>
-          <div className="mt-6 mb-2 flex justify-center">
-            <div className="h-1 w-24 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full opacity-70"></div>
+        <header className="pt-16 pb-6 text-center relative flex items-center justify-center">
+          {/* Back button */}
+          <button
+            onClick={() => router.replace('/')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 border border-cyan-500/20 text-cyan-300 transition-all shadow focus:outline-none focus:ring-2 focus:ring-cyan-400 hover:scale-110 hover:shadow-cyan-400/50 hover:drop-shadow-lg hover:bg-cyan-900/60 hover:text-white z-50"
+            aria-label="Back to main page"
+            type="button"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg mb-2 animate-fade-in">{greeting}, <span className="text-cyan-400">User!</span></h1>
+            <p className="mt-2 text-lg text-gray-300 max-w-2xl mx-auto animate-fade-in-slow">Welcome to your dashboard. Here you can select the GPT helper you want to use.</p>
+            <div className="mt-6 mb-2 flex justify-center">
+              <div className="h-1 w-24 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full opacity-70"></div>
+            </div>
           </div>
+          {/* Removed Log In/Register buttons */}
         </header>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
           {rooms.map((room: Room, idx) => (
@@ -80,7 +92,7 @@ export default function Dashboard() {
             >
               <div className="aspect-video w-full overflow-hidden relative">
                 <Image
-                  src={room.assistant?.imageUrl || `/images/login.jpeg`}
+                  src={'/images/login.jpeg'}
                   alt={room.name}
                   width={400}
                   height={200}

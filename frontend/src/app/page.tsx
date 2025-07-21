@@ -181,9 +181,11 @@ function App() {
                   Log In
                 </button>
               </Link>
-              <button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-4 py-2 rounded-lg hover:from-cyan-400 hover:to-blue-400 transition-all font-medium shadow-lg shadow-cyan-500/50 hover:shadow-xl hover:shadow-cyan-400/60 border border-cyan-400/50">
-                Sign Up
-              </button>
+              <Link href="/register">
+                <button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-4 py-2 rounded-lg hover:from-cyan-400 hover:to-blue-400 transition-all font-medium shadow-lg shadow-cyan-500/50 hover:shadow-xl hover:shadow-cyan-400/60 border border-cyan-400/50">
+                  Register
+                </button>
+              </Link>
             </div>
 
             {/* Mobile menu button */}
@@ -218,9 +220,11 @@ function App() {
                     Log In
                   </button>
                 </Link>
-                <button className="block w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-4 py-2 rounded-lg hover:from-cyan-400 hover:to-blue-400 transition-all font-medium shadow-lg shadow-cyan-500/50 hover:shadow-xl hover:shadow-cyan-400/60 border border-cyan-400/50">
-                  Sign Up
-                </button>
+                <Link href="/register">
+                  <button className="block w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-4 py-2 rounded-lg hover:from-cyan-400 hover:to-blue-400 transition-all font-medium shadow-lg shadow-cyan-500/50 hover:shadow-xl hover:shadow-cyan-400/60 border border-cyan-400/50">
+                    Register
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -387,9 +391,11 @@ function App() {
             Join thousands of users already getting expert AI assistance. Create your account and start chatting with specialized AI assistants.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-8 py-3 rounded-lg hover:from-cyan-400 hover:to-blue-400 transition-all font-semibold text-lg shadow-xl shadow-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-400/60 border border-cyan-400/50 hover:scale-105">
-              Create Free Account
-            </button>
+            <Link href="/register">
+              <button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-8 py-3 rounded-lg hover:from-cyan-400 hover:to-blue-400 transition-all font-semibold text-lg shadow-xl shadow-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-400/60 border border-cyan-400/50 hover:scale-105">
+                Create Free Account
+              </button>
+            </Link>
           </div>
         </div>
       </section>
