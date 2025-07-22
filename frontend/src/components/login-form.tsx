@@ -24,13 +24,13 @@ export function LoginForm({
     try {
       let response;
       if (mode === 'register') {
-        response = await axios.post("http://localhost:3000/api/v1/user/signup", {
+        response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/signup`, {
           email: (document.getElementById("email") as HTMLInputElement)?.value,
           password: (document.getElementById("password") as HTMLInputElement)?.value,
           username: (document.getElementById("username") as HTMLInputElement)?.value,
         });
       } else {
-        response = await axios.post("http://localhost:3000/api/v1/user/signin", {
+        response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/signin`, {
           email: (document.getElementById("email") as HTMLInputElement)?.value,
           password: (document.getElementById("password") as HTMLInputElement)?.value,
         });
