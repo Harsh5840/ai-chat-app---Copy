@@ -1,8 +1,8 @@
 import { WebSocketServer } from 'ws';
 import axios from 'axios';
-
-const wss = new WebSocketServer({ port: 7070 }, () => {
-  console.log('WebSocket server is running on port 7070');
+const PORT = process.env.PORT || 7070;  
+const wss = new WebSocketServer({ port: PORT }, () => {
+  console.log(`WebSocket server is running on port ${PORT}`);
 });
 
 const rooms = {}; // Store WebSocket clients per room
