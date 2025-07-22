@@ -4,7 +4,6 @@ WORKDIR /app
 
 # Copy package files and prisma folder
 COPY package*.json prisma ./
-COPY .env .
 RUN npm install
 
 # Generate Prisma client
