@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const axiosAuth = axios.create({
-  baseURL: "http://localhost:3000/api/v1", // or use env var if deploying
+  baseURL: process.env.NEXT_PUBLIC_API_URL + "/api/v1",
 });
 
 // Intercept request to attach token

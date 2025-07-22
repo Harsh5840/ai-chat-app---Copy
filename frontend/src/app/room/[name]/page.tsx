@@ -34,7 +34,7 @@ export default function RoomPage() {
     const fetchHistory = async () => {
       try {
         const roomName = name.startsWith('room-') ? name : `room-${name}`;
-        const res = await fetch(`http://localhost:3000/api/v1/chat/history/${roomName}`)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/history/${roomName}`)
         const data = await res.json()
         if (data.history) setChat(data.history)
       } catch (err) {
@@ -52,7 +52,7 @@ export default function RoomPage() {
   useEffect(() => {
     if (!userId) return
 
-    const ws = new WebSocket('ws://localhost:7070')
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}`)
     const roomName = name.startsWith('room-') ? name : `room-${name}`;
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', roomName }))
