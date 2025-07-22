@@ -10,9 +10,6 @@
     # Copy source files
     COPY . .
     
-    # Copy .env explicitly (if not excluded by .dockerignore)
-    COPY .env .env
-    
     # Build the Next.js app
     RUN npm run build
     
