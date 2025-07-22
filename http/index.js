@@ -15,7 +15,7 @@ app.use(express.json()); //we added this line to parse the request body as json
 app.use("/api/v1", mainRouter);
 
 
-app.listen(3000, (err) => {
+app.listen(3001, (err) => {
   console.log("app is listening on port 3000");
   if (err) throw err;
 }); 

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -44,8 +44,14 @@ export function LoginForm({
       } else {
         setError("No token received from server");
       }
-    } catch (error: any) {
-      setError(error?.response?.data?.message || error.message || 'Authentication failed');
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        setError((error as AxiosError<{ message?: string }>).response?.data?.message || 'Authentication failed');
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Authentication failed');
+      }
     } finally {
       setLoading(false);
     }

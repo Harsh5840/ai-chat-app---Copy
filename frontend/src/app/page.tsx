@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   MessageCircle,
   Stethoscope,
@@ -259,10 +260,12 @@ function App() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl"></div>
-              <img 
+              <Image 
                 src={`/images/2.png`}
                 alt="Futuristic AI Robot" 
                 className="relative z-10 w-full h-auto rounded-2xl shadow-2xl shadow-cyan-500/30 border border-cyan-500/30"
+                width={500}
+                height={500}
               />
             </div>
           </div>
@@ -322,7 +325,7 @@ function App() {
                     <div className="bg-black/40 rounded-full p-4 mb-4 shadow-lg border-2 border-white/10 group-hover:border-cyan-400/40 transition-all">
                       <Icon className="h-12 w-12 text-white drop-shadow-lg" />
                     </div>
-                    <img src={room.imageUrl} alt={room.name} className="h-16 w-16 rounded-full border-4 border-white shadow-xl mb-2 object-cover bg-white/10" />
+                    <Image src={room.imageUrl} alt={room.name} className="h-16 w-16 rounded-full border-4 border-white shadow-xl mb-2 object-cover bg-white/10" width={64} height={64} />
                   </div>
                   {/* Room Info */}
                   <div className="px-8 pb-8 pt-2 flex flex-col items-center relative z-10">
@@ -369,7 +372,7 @@ function App() {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-4 italic leading-relaxed">
-                  "{testimonial.content}"
+                  &quot;{testimonial.content}&quot;
                 </p>
                 <div>
                   <p className="font-semibold text-white">{testimonial.name}</p>

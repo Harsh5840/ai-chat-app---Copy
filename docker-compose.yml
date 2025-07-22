@@ -1,0 +1,21 @@
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - http
+      - websocket
+
+  http:
+    build: ./http
+    ports:
+      - "3001:3001"  
+    env_file:
+      - ./http/.env
+
+  websocket:
+    build: ./websocket
+    ports:
+      - "7070:7070"  
