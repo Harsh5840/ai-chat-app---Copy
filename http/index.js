@@ -14,8 +14,9 @@ app.use(express.json()); //we added this line to parse the request body as json
 //main router
 app.use("/api/v1", mainRouter);
 
+const PORT = process.env.PORT || 3001;
 
-app.listen(3001, (err) => {
-  console.log("app is listening on port 3000");
-  if (err) throw err;
-}); 
+app.listen(PORT, () => {
+  console.log(`app is listening on port ${PORT}`);
+});
+ 
