@@ -3,9 +3,12 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   AWS_REGION: us-east-1  # Change to your AWS region
+  NODE_ENV: test
 
 jobs:
   # ---------- CI Stage ----------
@@ -15,16 +18,18 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
           POSTGRES_DB: testdb
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U testuser"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+        volumes:
+          - postgres_data:/var/lib/postgresql/data
 
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +40,12 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
+      # Set up environment variables
+      - name: Set up environment
+        run: |
+          echo "DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
 
       # Install + Lint Frontend
       - name: Install & Lint Frontend
@@ -56,17 +67,16 @@ jobs:
         working-directory: ./websocket
         run: npm ci
 
-      # Run tests if they exist
+      # Run tests
       - name: Run Tests
         run: |
-          echo "Running tests..."
-          # Add your test commands here when you have tests
-          # cd http && npm test
-          # cd websocket && npm test
+          cd http && npm test
+          cd ../websocket && npm test
 
   # ---------- Docker Build & Push Stage ----------
   docker-build-and-push:
     needs: build-and-test
+    if: github.ref == 'refs/heads/main'  # Only run on main branch
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.meta.outputs.IMAGE_TAG }}
@@ -98,8 +108,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/websocket-ai-http:latest
             ${{ secrets.DOCKER_USERNAME }}/websocket-ai-http:${{ steps.meta.outputs.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push WebSocket Service
         uses: docker/build-push-action@v5
@@ -109,8 +117,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/websocket-ai-ws:latest
             ${{ secrets.DOCKER_USERNAME }}/websocket-ai-ws:${{ steps.meta.outputs.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push Frontend
         uses: docker/build-push-action@v5
@@ -120,17 +126,23 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/websocket-ai-frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/websocket-ai-frontend:${{ steps.meta.outputs.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-  # ---------- Deploy to AWS Stage ----------
+  # ---------- Deploy to Production ----------
   deploy-to-aws:
     needs: docker-build-and-push
+    if: github.ref == 'refs/heads/main'  # Only run on main branch
     runs-on: ubuntu-latest
     environment: production
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -139,121 +151,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Create deployment package
+      - name: Deploy to AWS ECS
         run: |
-          # Create deployment directory
-          mkdir -p deploy
-          
-          # Copy docker-compose and environment files
-          cp docker-compose.prod.yml deploy/
-          cp .env.production deploy/.env
-          
-          # Create deployment script
-          cat > deploy/deploy.sh << 'EOF'
-          #!/bin/bash
-          set -e
-          
-          echo "🚀 Starting deployment..."
-          
-          # Export IMAGE_TAG for docker-compose
-          export IMAGE_TAG=${{ needs.docker-build-and-push.outputs.image-tag }}
-          
-          # Pull latest images
-          IMAGE_TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml pull
-          
-          # Stop existing containers
-          IMAGE_TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml down
-          
-          # Start new containers
-          IMAGE_TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml up -d
-          
-          # Clean up old images
-          docker image prune -f
-          
-          echo "✅ Deployment completed successfully!"
-          EOF
-          
-          chmod +x deploy/deploy.sh
+          # Update ECS service with the new task definition
+          # This is a placeholder - replace with your actual deployment commands
+          echo "Deploying to AWS ECS with image tag: ${{ needs.docker-build-and-push.outputs.image-tag }}"
+          # Example command (uncomment and modify as needed):
+          # aws ecs update-service \
+          #   --cluster your-cluster-name \
+          #   --service your-service-name \
+          #   --force-new-deployment \
+          #   --region ${{ env.AWS_REGION }}
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USERNAME }}
-          key: ${{ secrets.AWS_PRIVATE_KEY }}
-          port: ${{ secrets.AWS_PORT || 22 }}
-          script: |
-            # Create app directory if it doesn't exist
-            mkdir -p /home/${{ secrets.AWS_USERNAME }}/websocket-ai-chat
-            cd /home/${{ secrets.AWS_USERNAME }}/websocket-ai-chat
-            
-            # Backup current deployment
-            if [ -f docker-compose.prod.yml ]; then
-              echo "📦 Creating backup..."
-              cp docker-compose.prod.yml docker-compose.backup.yml || true
-            fi
-
-      - name: Copy deployment files
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USERNAME }}
-          key: ${{ secrets.AWS_PRIVATE_KEY }}
-          port: ${{ secrets.AWS_PORT || 22 }}
-          source: "deploy/*"
-          target: "/home/${{ secrets.AWS_USERNAME }}/websocket-ai-chat/"
-          strip_components: 1
-
-      - name: Execute deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USERNAME }}
-          key: ${{ secrets.AWS_PRIVATE_KEY }}
-          port: ${{ secrets.AWS_PORT || 22 }}
-          script: |
-            cd /home/${{ secrets.AWS_USERNAME }}/websocket-ai-chat
-            
-            # Make sure Docker is running
-            sudo systemctl start docker
-            
-            # Login to Docker Hub
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            
-            # Run deployment script with IMAGE_TAG exported
-            export IMAGE_TAG=${{ needs.docker-build-and-push.outputs.image-tag }}
-            chmod +x deploy.sh
-            ./deploy.sh
-            
-            # Verify deployment
-            echo "🔍 Verifying deployment..."
-            sleep 10
-            
-            # Check if containers are running
-            IMAGE_TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml ps
-            
-            # Test health endpoints
-            curl -f http://localhost:3001/health || echo "⚠️  HTTP service health check failed"
-            
-            echo "🎉 Deployment verification completed!"
-
-      - name: Notify deployment status
-        if: always()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USERNAME }}
-          key: ${{ secrets.AWS_PRIVATE_KEY }}
-          port: ${{ secrets.AWS_PORT || 22 }}
-          script: |
-            cd /home/${{ secrets.AWS_USERNAME }}/websocket-ai-chat
-            
-            echo "📊 Final deployment status:"
-            IMAGE_TAG=${{ needs.docker-build-and-push.outputs.image-tag }} docker-compose -f docker-compose.prod.yml ps
-            
-            if [ $? -eq 0 ]; then
-              echo "✅ All services are running successfully!"
-            else
-              echo "❌ Some services failed to start"
-              exit 1
-            fi
+      - name: Update environment variables in production
+        env:
+          IMAGE_TAG: ${{ needs.docker-build-and-push.outputs.image-tag }}
+        run: |
+          # This is a placeholder - update with your actual deployment commands
+          echo "Updating production environment with image tag: $IMAGE_TAG"
+          # Example command (uncomment and modify as needed):
+          # aws ssm put-parameter \
+          #   --name "/app/IMAGE_TAG" \
+          #   --value "$IMAGE_TAG" \
+          #   --type "String" \
+          #   --overwrite \
+          #   --region ${{ env.AWS_REGION }}

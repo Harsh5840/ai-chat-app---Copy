@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: dev-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dev_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   http:
     build:
       context: ./http
@@ -11,10 +23,18 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       JSON_WEB_TOKEN_SECRET: ${JSON_WEB_TOKEN_SECRET}
       GROQ_API_KEY: ${GROQ_API_KEY}
+      NODE_ENV: development
     ports:
       - "3001:3001"
-
-    
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   websocket:
     build:
@@ -25,11 +45,17 @@ services:
     environment:
       HTTP_SERVICE_URL: "http://http:3001"
       PORT: 7070
+      NODE_ENV: development
     ports: 
       - "7070:7070"
     depends_on:
-      - http
-
+      http:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7070/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:
@@ -40,8 +66,14 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:3001"
       NEXT_PUBLIC_WS_URL: "ws://localhost:7070"
+      NODE_ENV: development
     ports:
       - "3000:3000"
     depends_on:
-      - websocket
-      - http
+      websocket:
+        condition: service_healthy
+      http:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
