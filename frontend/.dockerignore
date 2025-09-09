@@ -1,5 +1,31 @@
+# Node
 node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Build output (rebuilt inside container)
 .next
-build
+out
 dist
 
+# Env
+.env
+.env.local
+.env.development
+.env.production
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
+*.idea/
+*.vscode/
+
+# Git
+.git
+.gitignore
+
+# Docker files
+Dockerfile
+.dockerignore

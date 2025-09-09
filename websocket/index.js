@@ -1,83 +1,162 @@
 import { WebSocketServer } from 'ws';
 import axios from 'axios';
-const PORT = process.env.PORT || 7070;  
+
+const PORT = process.env.PORT || 7070;
+const HTTP_SERVICE_URL = process.env.HTTP_SERVICE_URL || 'http://localhost:3001';
+const REQUEST_TIMEOUT = 30000; // 30 seconds
+
 const wss = new WebSocketServer({ port: PORT }, () => {
   console.log(`WebSocket server is running on port ${PORT}`);
+  console.log(`HTTP service URL: ${HTTP_SERVICE_URL}`);
 });
 
 const rooms = {}; // Store WebSocket clients per room
+
+// Helper function to safely send message to client
+const safeSend = (client, message) => {
+  if (client.readyState === 1) { // WebSocket.OPEN
+    try {
+      client.send(typeof message === 'string' ? message : JSON.stringify(message));
+    } catch (error) {
+      console.error('Error sending message to client:', error.message);
+    }
+  }
+};
+
+// Helper function to broadcast to room
+const broadcastToRoom = (roomName, message) => {
+  if (!rooms[roomName]) return;
+  
+  const activeClients = rooms[roomName].filter(client => client.readyState === 1);
+  rooms[roomName] = activeClients; // Clean up closed connections
+  
+  activeClients.forEach(client => safeSend(client, message));
+  console.log(`Broadcasted to ${activeClients.length} clients in room ${roomName}`);
+};
 
 wss.on('connection', (socket) => {
   let currentRoom = null;
   console.log('WebSocket connection established');
 
   socket.on('message', async (data) => {
-    const msg = JSON.parse(data);
-    console.log('Received message:', msg);
+    try {
+      const msg = JSON.parse(data);
+      console.log('Received message:', { type: msg.type, roomName: msg.roomName });
 
-    if (msg.type === 'join') {
-      currentRoom = msg.roomName;
-      if (!rooms[currentRoom]) rooms[currentRoom] = [];
-      if (!rooms[currentRoom].includes(socket)) {
-        rooms[currentRoom].push(socket);
-      }
-      console.log(`User joined room: ${currentRoom}`);
-      console.log('Room members:', rooms[currentRoom].length);
-      console.log('Room sockets:', rooms[currentRoom].map(s => s._socket && s._socket.remoteAddress));
-    }
-
-    if (msg.type === 'chat') {
-      const { content, roomName, userId } = msg;
-      let username = 'Unknown';
-      try {
-        const user = await axios.get(`http://localhost:3000/api/v1/user/${userId}`);
-        username = user.data.username || 'Unknown';
-      } catch (e) {
-        console.error('Could not fetch username for chat message', e);
-      }
-      
-      wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'typing',
-            roomName,
-          }))
+      if (msg.type === 'join') {
+        // Leave previous room if any
+        if (currentRoom && rooms[currentRoom]) {
+          rooms[currentRoom] = rooms[currentRoom].filter(s => s !== socket);
         }
-      })
-      
-      try {
-        const response = await axios.post('http://localhost:3000/api/v1/chat', {
-          userId,
+
+        currentRoom = msg.roomName;
+        if (!rooms[currentRoom]) rooms[currentRoom] = [];
+        if (!rooms[currentRoom].includes(socket)) {
+          rooms[currentRoom].push(socket);
+        }
+        
+        console.log(`User joined room: ${currentRoom} (${rooms[currentRoom].length} members)`);
+        
+        // Send join confirmation
+        safeSend(socket, {
+          type: 'joined',
+          roomName: currentRoom,
+          memberCount: rooms[currentRoom].length
+        });
+      }
+
+      if (msg.type === 'chat') {
+        const { content, roomName, userId } = msg;
+        
+        // Validate input
+        if (!content || !roomName || !userId) {
+          safeSend(socket, {
+            type: 'error',
+            message: 'Missing required fields'
+          });
+          return;
+        }
+
+        let username = 'Unknown';
+        try {
+          const userResponse = await axios.get(
+            `${HTTP_SERVICE_URL}/api/v1/user/${userId}`,
+            { timeout: 5000 }
+          );
+          username = userResponse.data.username || 'Unknown';
+        } catch (e) {
+          console.error('Could not fetch username:', e.message);
+        }
+        
+        // Send typing indicator to room
+        broadcastToRoom(roomName, {
+          type: 'typing',
           roomName,
-          content,
+          username
         });
+        
+        try {
+          const response = await axios.post(
+            `${HTTP_SERVICE_URL}/api/v1/chat`,
+            { userId, roomName, content },
+            { timeout: REQUEST_TIMEOUT }
+          );
 
-        const payload = JSON.stringify({
-          type: 'chat',
-          userMessage: content,
-          aiMessage: response.data.aiMessage,
-          sender: userId,
-          username,
-        });
+          const payload = {
+            type: 'chat',
+            userMessage: {
+              content,
+              sender: 'user',
+              username,
+              userId,
+              createdAt: new Date().toISOString()
+            },
+            aiMessage: {
+              content: response.data.aiMessage.content,
+              sender: 'ai',
+              createdAt: response.data.aiMessage.createdAt
+            }
+          };
 
-        // Broadcast to all in room
-        if (rooms[roomName]) {
-          console.log(`Broadcasting to ${rooms[roomName].length} clients in room ${roomName}`);
-        }
-        rooms[roomName]?.forEach((client) => {
-          if (client.readyState === 1) {
-            client.send(payload);
+          // Broadcast to room
+          broadcastToRoom(roomName, payload);
+          
+        } catch (err) {
+          console.error('Error processing chat message:', err.message);
+          
+          let errorMessage = 'Failed to process message';
+          if (err.code === 'ECONNABORTED') {
+            errorMessage = 'Request timeout. Please try again.';
+          } else if (err.response?.status === 429) {
+            errorMessage = 'Rate limit exceeded. Please try again later.';
+          } else if (err.response?.status >= 500) {
+            errorMessage = 'Server error. Please try again.';
           }
-        });
-      } catch (err) {
-        console.error('Error processing message:', err.message);
+          
+          safeSend(socket, {
+            type: 'error',
+            message: errorMessage
+          });
+        }
       }
+    } catch (parseError) {
+      console.error('Error parsing message:', parseError.message);
+      safeSend(socket, {
+        type: 'error',
+        message: 'Invalid message format'
+      });
     }
   });
 
   socket.on('close', () => {
+    console.log('WebSocket connection closed');
     if (currentRoom && rooms[currentRoom]) {
       rooms[currentRoom] = rooms[currentRoom].filter((s) => s !== socket);
+      console.log(`User left room: ${currentRoom} (${rooms[currentRoom].length} members remaining)`);
     }
+  });
+
+  socket.on('error', (error) => {
+    console.error('WebSocket error:', error.message);
   });
 });

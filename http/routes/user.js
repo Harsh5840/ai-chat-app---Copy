@@ -110,12 +110,30 @@ export { userRouter };
 
 userRouter.get("/:id", async (req, res) => {
   try {
+    const userId = parseInt(req.params.id);
+    
+    if (isNaN(userId) || userId <= 0) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: Number(req.params.id) }
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        // Don't return password
+      }
     });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "An unexpected error occurred" });
+    console.error('Error fetching user:', err);
+    res.status(500).json({ message: "Failed to fetch user data" });
   }
 });

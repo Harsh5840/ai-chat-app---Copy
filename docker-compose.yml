@@ -1,21 +1,47 @@
+version: "3.9"
 
 services:
+  http:
+    build:
+      context: ./http
+      dockerfile: Dockerfile
+    container_name: http
+    restart: always
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JSON_WEB_TOKEN_SECRET: ${JSON_WEB_TOKEN_SECRET}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    ports:
+      - "3001:3001"
+
+    
+
+  websocket:
+    build:
+      context: ./websocket
+      dockerfile: Dockerfile
+    container_name: websocket
+    restart: always
+    environment:
+      HTTP_SERVICE_URL: "http://http:3001"
+      PORT: 7070
+    ports: 
+      - "7070:7070"
+    depends_on:
+      - http
+
+
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+      NEXT_PUBLIC_WS_URL: "ws://localhost:7070"
     ports:
       - "3000:3000"
     depends_on:
-      - http
       - websocket
-
-  http:
-    build: ./http
-    ports:
-      - "3001:3001"  
-    env_file:
-      - ./http/.env
-
-  websocket:
-    build: ./websocket
-    ports:
-      - "7070:7070"  
+      - http

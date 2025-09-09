@@ -1,5 +1,38 @@
+# Node modules (will be installed inside container)
 node_modules
 npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.idea/
+*.vscode/
+
+# Build outputs
+dist
+build
+coverage
+
+# Prisma local files
+.prisma/
+*.db
+
+# Docker itself
 Dockerfile
 .dockerignore
 
+# Git files
+.git
+.gitignore

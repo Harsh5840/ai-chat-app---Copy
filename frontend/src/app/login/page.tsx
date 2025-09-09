@@ -6,7 +6,7 @@ import Image from "next/image"
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden grid min-h-svh lg:grid-cols-2">
+    <div className=" bg-black relative overflow-hidden grid min-h-svh lg:grid-cols-2">
       {/* Animated Background */}
       <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 animate-pulse"></div>
       <div className="fixed inset-0 bg-gradient-to-tr from-pink-900/10 via-transparent to-green-900/10 animate-pulse" style={{animationDelay: '1s'}}></div>

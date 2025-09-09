@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  http:
+    image: ${DOCKER_USERNAME}/websocket-ai-http:${IMAGE_TAG:-latest}
+    container_name: websocket-ai-http
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JSON_WEB_TOKEN_SECRET: ${JSON_WEB_TOKEN_SECRET}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  websocket:
+    image: ${DOCKER_USERNAME}/websocket-ai-ws:${IMAGE_TAG:-latest}
+    container_name: websocket-ai-websocket
+    restart: unless-stopped
+    environment:
+      HTTP_SERVICE_URL: "http://http:3001"
+      PORT: 7070
+      NODE_ENV: production
+    ports: 
+      - "7070:7070"
+    depends_on:
+      http:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    image: ${DOCKER_USERNAME}/websocket-ai-frontend:${IMAGE_TAG:-latest}
+    container_name: websocket-ai-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - websocket
+      - http
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: websocket-ai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-prod_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+# Nginx reverse proxy (optional but recommended)
+# ...existing nginx service block...
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
