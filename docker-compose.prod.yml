@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   http:
-    image: ${DOCKER_USERNAME}/websocket-ai-http:${IMAGE_TAG:-latest}
+    image: ${DOCKER_USERNAME}/websocket-ai-http:latest
     container_name: websocket-ai-http
     restart: unless-stopped
     environment:
@@ -23,7 +23,7 @@ services:
       start_period: 40s
 
   websocket:
-    image: ${DOCKER_USERNAME}/websocket-ai-ws:${IMAGE_TAG:-latest}
+    image: ${DOCKER_USERNAME}/websocket-ai-ws:latest
     container_name: websocket-ai-websocket
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
       - app-network
 
   frontend:
-    image: ${DOCKER_USERNAME}/websocket-ai-frontend:${IMAGE_TAG:-latest}
+    image: ${DOCKER_USERNAME}/websocket-ai-frontend:latest
     container_name: websocket-ai-frontend
     restart: unless-stopped
     environment:
@@ -54,27 +54,23 @@ services:
     networks:
       - app-network
 
-  db:
-    image: postgres:16-alpine
-    container_name: websocket-ai-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-prod_db}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - app-network
-
-# Nginx reverse proxy (optional but recommended)
-# ...existing nginx service block...
+# Optional Nginx reverse proxy
+# nginx:
+#   image: nginx:alpine
+#   container_name: websocket-ai-nginx
+#   restart: unless-stopped
+#   volumes:
+#     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#   ports:
+#     - "80:80"
+#     - "443:443"
+#   depends_on:
+#     - frontend
+#     - websocket
+#     - http
+#   networks:
+#     - app-network
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  postgres_data:
