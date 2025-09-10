@@ -7,13 +7,16 @@ import cors from "cors";
 import { mainRouter}  from "./routes/index.js";
 
 
-//middlewares should be above router as order does matter here
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://ai-chat-app-copy-lzjjz8e3y-harshs-projects-43abc943.vercel.app", // Vercel frontend
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json({ limit: '10mb' })); //we added this line to parse the request body as json
 
 // Global error handler
