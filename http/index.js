@@ -13,7 +13,7 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: "*", // Allow all origins for testing; change to allowedOrigins in production
   credentials: true,
 }));
 
