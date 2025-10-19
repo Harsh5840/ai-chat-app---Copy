@@ -1,11 +1,12 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, Plus } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import axiosAuth from "@/lib/axiosAuth"
+import CreateRoomModal from "@/components/create-room-modal"
 
 interface Room {
   id: string;
@@ -24,6 +25,7 @@ interface Room {
 export default function Dashboard() {
   const [greeting, setGreeting] = useState("")
   const [rooms, setRooms] = useState<Room[]>([])
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -54,6 +56,19 @@ export default function Dashboard() {
     fetchRooms();
   }, []);
 
+  const handleRoomCreated = () => {
+    // Refetch rooms after creating a new one
+    const fetchRooms = async () => {
+      try {
+        const response = await axiosAuth.get("/dashboard");
+        setRooms(response.data);
+      } catch (error) {
+        console.error("Error fetching rooms:",error);
+      }
+    };
+    fetchRooms();
+  }
+
   return (
     <div className="min-h-screen bg-black relative overflow-hidden font-sans">
       {/* Animated Background */}
@@ -78,8 +93,19 @@ export default function Dashboard() {
               <div className="h-1 w-24 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full opacity-70"></div>
             </div>
           </div>
-          {/* Removed Log In/Register buttons */}
         </header>
+        
+        {/* Create Room Button */}
+        <div className="flex justify-center mt-8 mb-4">
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white border-0 shadow-lg hover:shadow-xl px-8 py-6 text-lg font-semibold rounded-xl"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Create Custom Room
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
           {rooms.map((room: Room, idx) => (
             <Card
@@ -118,6 +144,14 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+      
+      {/* Create Room Modal */}
+      <CreateRoomModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onRoomCreated={handleRoomCreated}
+      />
+      
       {/* Animations */}
       <style jsx global>{`
         @keyframes fade-in {

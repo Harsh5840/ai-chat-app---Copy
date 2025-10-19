@@ -84,4 +84,64 @@ roomRouter.post('/:name/chat',authMiddleware, async (req, res) => {
   res.json(newChat);
 });
 
+// POST /room/create - Create a new custom room
+roomRouter.post('/create', authMiddleware, async (req, res) => {
+  try {
+    const { name, botType } = req.body;
+
+    // Input validation
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Valid room name is required' });
+    }
+
+    if (!botType || typeof botType !== 'string') {
+      return res.status(400).json({ error: 'Bot type is required' });
+    }
+
+    // Check if room already exists
+    const existingRoom = await prisma.room.findFirst({
+      where: { name: `room-${name.trim()}` }
+    });
+
+    if (existingRoom) {
+      return res.status(409).json({ error: 'Room with this name already exists' });
+    }
+
+    // Find the assistant by bot type
+    const assistant = await prisma.gptAssistant.findFirst({
+      where: { name: botType }
+    });
+
+    if (!assistant) {
+      return res.status(404).json({ error: 'Bot type not found' });
+    }
+
+    // Create the room
+    const newRoom = await prisma.room.create({
+      data: {
+        name: `room-${name.trim()}`,
+        description: `Custom ${assistant.name} room`,
+        assistantId: assistant.id
+      },
+      include: {
+        assistant: true
+      }
+    });
+
+    res.status(201).json({
+      id: newRoom.id,
+      name: newRoom.name,
+      description: newRoom.description,
+      assistant: {
+        id: newRoom.assistant.id,
+        name: newRoom.assistant.name,
+        description: newRoom.assistant.description
+      }
+    });
+  } catch (err) {
+    console.error('Room creation error:', err);
+    res.status(500).json({ error: 'Failed to create room' });
+  }
+});
+
 export { roomRouter };

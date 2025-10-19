@@ -65,6 +65,37 @@ wss.on('connection', (socket) => {
         });
       }
 
+      if (msg.type === 'typing') {
+        const { roomName, userId, isTyping } = msg;
+        
+        if (!roomName || !userId) return;
+        
+        let username = 'Unknown';
+        try {
+          const userResponse = await axios.get(
+            `${HTTP_SERVICE_URL}/api/v1/user/${userId}`,
+            { timeout: 5000 }
+          );
+          username = userResponse.data.username || 'Unknown';
+        } catch (e) {
+          console.error('Could not fetch username:', e.message);
+        }
+        
+        // Broadcast typing indicator to room (excluding sender)
+        if (rooms[roomName]) {
+          rooms[roomName].forEach(client => {
+            if (client !== socket && client.readyState === 1) {
+              safeSend(client, {
+                type: 'typing',
+                username,
+                userId,
+                isTyping
+              });
+            }
+          });
+        }
+      }
+
       if (msg.type === 'chat') {
         const { content, roomName, userId } = msg;
         
@@ -87,13 +118,6 @@ wss.on('connection', (socket) => {
         } catch (e) {
           console.error('Could not fetch username:', e.message);
         }
-        
-        // Send typing indicator to room
-        broadcastToRoom(roomName, {
-          type: 'typing',
-          roomName,
-          username
-        });
         
         try {
           const response = await axios.post(
