@@ -140,7 +140,7 @@ chatRouter.post('/', async (req, res) => {
     const gptResponse = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages,
         max_tokens: 1000,
         temperature: 0.7,

@@ -103,6 +103,16 @@ export default function RoomPage() {
         // Clear typing indicator for this user
         setTypingUsers(prev => prev.filter(u => u.userId !== msg.userMessage.userId))
       }
+      
+      if (msg.type === 'error') {
+        console.error('Chat error:', msg.message)
+        setLoadingBot(false)
+        // Optionally show error to user
+        setChat((prev) => [
+          ...prev,
+          { sender: 'ai', content: `⚠️ Error: ${msg.message}`, username: 'System' }
+        ])
+      }
     }
 
     ws.onerror = (err) => {
@@ -278,59 +288,65 @@ export default function RoomPage() {
                 key={idx}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
-                <div
-                  className={`max-w-[75%] sm:max-w-[60%] rounded-2xl px-4 py-3 shadow-lg ${
-                    message.sender === 'user'
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
-                      : 'bg-gray-800/90 text-gray-100 border border-gray-700/50'
-                  }`}
-                >
+                <div className="flex flex-col max-w-[75%] sm:max-w-[60%]">
+                  {/* Username label above message */}
                   {message.username && (
-                    <div className={`text-xs font-semibold mb-1.5 ${
-                      message.sender === 'user' ? 'text-cyan-100' : 'text-cyan-400'
+                    <div className={`text-xs font-bold mb-1 px-2 ${
+                      message.sender === 'user' 
+                        ? 'text-right text-cyan-400' 
+                        : 'text-left text-purple-400'
                     }`}>
                       {message.username}
                     </div>
                   )}
-                  <div className={`prose prose-sm max-w-none ${
-                    message.sender === 'user' ? 'prose-invert' : 'prose-invert'
-                  }`}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        code({ className, children, ...props }: any) {
-                          const match = /language-(\w+)/.exec(className || '')
-                          const inline = !className
-                          return !inline && match ? (
-                            <SyntaxHighlighter
-                              style={vscDarkPlus as any}
-                              language={match[1]}
-                              PreTag="div"
-                              className="rounded-lg my-2"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                          ) : (
-                            <code className={`${className} bg-black/30 px-1.5 py-0.5 rounded text-sm`} {...props}>
-                              {children}
-                            </code>
-                          )
-                        },
-                        img({ src, alt }: any) {
-                          return (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img 
-                              src={src} 
-                              alt={alt || ''} 
-                              className="rounded-lg my-2 max-w-full h-auto"
-                            />
-                          )
-                        }
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                  
+                  <div
+                    className={`rounded-2xl px-4 py-3 shadow-lg ${
+                      message.sender === 'user'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-br-sm'
+                        : 'bg-gray-800/90 text-gray-100 border border-gray-700/50 rounded-bl-sm'
+                    }`}
+                  >
+                    <div className={`prose prose-sm max-w-none ${
+                      message.sender === 'user' ? 'prose-invert' : 'prose-invert'
+                    }`}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          code({ className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || '')
+                            const inline = !className
+                            return !inline && match ? (
+                              <SyntaxHighlighter
+                                style={vscDarkPlus as any}
+                                language={match[1]}
+                                PreTag="div"
+                                className="rounded-lg my-2"
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            ) : (
+                              <code className={`${className} bg-black/30 px-1.5 py-0.5 rounded text-sm`} {...props}>
+                                {children}
+                              </code>
+                            )
+                          },
+                          img({ src, alt }: any) {
+                            return (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img 
+                                src={src} 
+                                alt={alt || ''} 
+                                className="rounded-lg my-2 max-w-full h-auto"
+                              />
+                            )
+                          }
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>

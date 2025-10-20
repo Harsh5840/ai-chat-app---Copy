@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight, ArrowLeft, Plus } from "lucide-react"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import axiosAuth from "@/lib/axiosAuth"
@@ -73,6 +72,38 @@ export default function Dashboard() {
     fetchRooms();
   }
 
+  // Get icon for assistant type
+  const getAssistantIcon = (assistantName: string) => {
+    const iconMap: { [key: string]: string } = {
+      'DevGPT': '💻',
+      'ChefGPT': '👨‍🍳',
+      'DocGPT': '⚕️',
+      'LawGPT': '⚖️',
+      'LegalGPT': '⚖️',
+      'FitGPT': '💪',
+      'FinanceGPT': '💰',
+      'MoneyGPT': '💰',
+      'StoryGPT': '📚',
+    }
+    return iconMap[assistantName] || '🤖'
+  }
+
+  // Get gradient colors for assistant type
+  const getAssistantGradient = (assistantName: string) => {
+    const gradientMap: { [key: string]: string } = {
+      'DevGPT': 'from-blue-600 to-cyan-500',
+      'ChefGPT': 'from-orange-600 to-red-500',
+      'DocGPT': 'from-green-600 to-emerald-500',
+      'LawGPT': 'from-purple-600 to-indigo-500',
+      'LegalGPT': 'from-purple-600 to-indigo-500',
+      'FitGPT': 'from-red-600 to-pink-500',
+      'FinanceGPT': 'from-yellow-600 to-amber-500',
+      'MoneyGPT': 'from-yellow-600 to-amber-500',
+      'StoryGPT': 'from-violet-600 to-purple-500',
+    }
+    return gradientMap[assistantName] || 'from-gray-600 to-slate-500'
+  }
+
   return (
     <div className="min-h-screen bg-black relative overflow-hidden font-sans">
       {/* Animated Background */}
@@ -115,32 +146,35 @@ export default function Dashboard() {
             <Card
               key={room.id}
               className={
-                `flex h-full flex-col overflow-hidden bg-black/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-400/40 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl animate-fade-in-card` +
+                `flex h-full flex-col overflow-hidden bg-black/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-400/40 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl animate-fade-in-card hover:scale-105` +
                 ` delay-${idx * 100}`
               }
               style={{ animationDelay: `${idx * 100}ms` }}
             >
-              <div className="aspect-video w-full overflow-hidden relative">
-                <Image
-                  src={'/images/login.jpeg'}
-                  alt={room.name}
-                  width={400}
-                  height={200}
-                  className="h-full w-full object-cover transition-all hover:scale-105 rounded-t-2xl"
-                />
+              {/* Icon/Image Header */}
+              <div className={`aspect-video w-full overflow-hidden relative bg-gradient-to-br ${getAssistantGradient(room.assistant.name)} flex items-center justify-center`}>
+                <div className="text-8xl animate-bounce-slow">
+                  {getAssistantIcon(room.assistant.name)}
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+                  <span className="text-white text-xs font-semibold">{room.assistant.name}</span>
+                </div>
               </div>
+              
               <CardHeader className="pb-2">
                 <CardTitle className="text-white text-xl font-bold truncate">{room.name}</CardTitle>
-                <CardDescription className="text-gray-300 text-sm line-clamp-2">{room.description || "Your AI assistant room"}</CardDescription>
+                <CardDescription className="text-gray-300 text-sm line-clamp-2">
+                  {room.assistant.description || room.description || "Your AI assistant room"}
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow" />
               <CardFooter>
                 <Button
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-black border border-cyan-400/50 shadow-lg shadow-cyan-500/50 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-400/60 font-semibold rounded-xl py-2 text-base"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/50 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-400/60 font-semibold rounded-xl py-2 text-base transition-all"
                   onClick={() => router.push(`/room/${room.name}`)}
                 >
-                  Enter {room.name}
+                  Enter Room
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -162,6 +196,10 @@ export default function Dashboard() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: none; }
         }
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
         .animate-fade-in {
           animation: fade-in 0.8s cubic-bezier(0.4,0,0.2,1) both;
         }
@@ -170,6 +208,9 @@ export default function Dashboard() {
         }
         .animate-fade-in-card {
           animation: fade-in 0.9s cubic-bezier(0.4,0,0.2,1) both;
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 2s ease-in-out infinite;
         }
       `}</style>
     </div>

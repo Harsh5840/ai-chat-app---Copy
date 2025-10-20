@@ -1,5 +1,8 @@
 import { WebSocketServer } from 'ws';
 import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const PORT = process.env.PORT || 7070;
 const HTTP_SERVICE_URL = process.env.HTTP_SERVICE_URL || 'http://localhost:3001';
@@ -147,6 +150,7 @@ wss.on('connection', (socket) => {
           
         } catch (err) {
           console.error('Error processing chat message:', err.message);
+          console.error('Error details:', err.response?.data || err);
           
           let errorMessage = 'Failed to process message';
           if (err.code === 'ECONNABORTED') {
@@ -155,6 +159,8 @@ wss.on('connection', (socket) => {
             errorMessage = 'Rate limit exceeded. Please try again later.';
           } else if (err.response?.status >= 500) {
             errorMessage = 'Server error. Please try again.';
+          } else if (err.response?.data?.error) {
+            errorMessage = err.response.data.error;
           }
           
           safeSend(socket, {
