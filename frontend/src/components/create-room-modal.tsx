@@ -14,13 +14,13 @@ interface CreateRoomModalProps {
 }
 
 const botTypes = [
-  { id: 'devgpt', name: 'DevGPT', description: 'Expert coding assistant', icon: '💻' },
-  { id: 'chefgpt', name: 'ChefGPT', description: 'Culinary expert', icon: '👨‍🍳' },
-  { id: 'docgpt', name: 'DocGPT', description: 'Medical information assistant', icon: '⚕️' },
-  { id: 'lawgpt', name: 'LawGPT', description: 'Legal assistant', icon: '⚖️' },
-  { id: 'fitgpt', name: 'FitGPT', description: 'Fitness and wellness coach', icon: '💪' },
-  { id: 'moneygpt', name: 'MoneyGPT', description: 'Financial advisor', icon: '💰' },
-  { id: 'storygpt', name: 'StoryGPT', description: 'Creative writing assistant', icon: '📚' },
+  { id: 'DevGPT', name: 'DevGPT', description: 'Expert coding assistant', icon: '💻' },
+  { id: 'ChefGPT', name: 'ChefGPT', description: 'Culinary expert', icon: '👨‍🍳' },
+  { id: 'DocGPT', name: 'DocGPT', description: 'Medical information assistant', icon: '⚕️' },
+  { id: 'LawGPT', name: 'LawGPT', description: 'Legal assistant', icon: '⚖️' },
+  { id: 'FitGPT', name: 'FitGPT', description: 'Fitness and wellness coach', icon: '💪' },
+  { id: 'FinanceGPT', name: 'FinanceGPT', description: 'Financial advisor', icon: '💰' },
+  { id: 'StoryGPT', name: 'StoryGPT', description: 'Creative writing assistant', icon: '📚' },
 ]
 
 export default function CreateRoomModal({ isOpen, onClose, onRoomCreated }: CreateRoomModalProps) {

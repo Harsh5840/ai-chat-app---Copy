@@ -26,7 +26,7 @@ model GptAssistant {
   imageUrl    String?            // Optional image/icon
   createdAt   DateTime @default(now())  
   updatedAt   DateTime @updatedAt
-  room        Room?              // each assistant maps to ONE room
+  rooms       Room[]             // each assistant can have MULTIPLE rooms
 }
 
 model Room {
@@ -36,7 +36,7 @@ model Room {
   chats          Chat[]
   userId         Int?    // user who created this room
   user           User?          @relation(fields: [userId], references: [id])
-  assistantId    Int            @unique // each room has ONE assistant
+  assistantId    Int            // each room has ONE assistant, but multiple rooms can share the same assistant
   assistant      GptAssistant   @relation(fields: [assistantId], references: [id])
   members        RoomMember[]
 }

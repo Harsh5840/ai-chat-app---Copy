@@ -49,12 +49,16 @@ export default function Dashboard() {
         const response = await axiosAuth.get("/dashboard");
         setRooms(response.data);
         console.log("Fetched rooms:", response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching rooms:",error);
+        // Redirect to login if unauthorized
+        if (error.response?.status === 401) {
+          router.push("/login");
+        }
       }
     };
     fetchRooms();
-  }, []);
+  }, [router]);
 
   const handleRoomCreated = () => {
     // Refetch rooms after creating a new one
