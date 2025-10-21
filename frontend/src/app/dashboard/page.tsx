@@ -152,30 +152,30 @@ export default function Dashboard() {
               style={{ animationDelay: `${idx * 100}ms` }}
             >
               {/* Icon/Image Header */}
-              <div className={`aspect-video w-full overflow-hidden relative bg-gradient-to-br ${getAssistantGradient(room.assistant.name)} flex items-center justify-center`}>
-                <div className="text-8xl animate-bounce-slow">
+              <div className={`w-full h-48 relative bg-gradient-to-br ${getAssistantGradient(room.assistant.name)} flex items-center justify-center`}>
+                <div className="text-9xl z-10 relative animate-bounce-slow filter drop-shadow-2xl">
                   {getAssistantIcon(room.assistant.name)}
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
-                  <span className="text-white text-xs font-semibold">{room.assistant.name}</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
+                  <span className="text-white text-xs font-bold uppercase tracking-wide">{room.assistant.name}</span>
                 </div>
               </div>
               
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3 pt-4">
                 <CardTitle className="text-white text-xl font-bold truncate">{room.name}</CardTitle>
-                <CardDescription className="text-gray-300 text-sm line-clamp-2">
+                <CardDescription className="text-gray-400 text-sm line-clamp-2 mt-1">
                   {room.assistant.description || room.description || "Your AI assistant room"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow" />
-              <CardFooter>
+              <CardFooter className="pt-0 pb-4">
                 <Button
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/50 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-400/60 font-semibold rounded-xl py-2 text-base transition-all"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/50 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-400/60 font-semibold rounded-xl py-3 text-base transition-all"
                   onClick={() => router.push(`/room/${room.name}`)}
                 >
                   Enter Room
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </CardFooter>
             </Card>

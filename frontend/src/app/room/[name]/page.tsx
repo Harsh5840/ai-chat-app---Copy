@@ -173,7 +173,7 @@ export default function RoomPage() {
       'application/pdf': ['.pdf'],
       'text/*': ['.txt', '.md']
     },
-    maxSize: 5242880, // 5MB
+    maxSize: 10485760, // 10MB
     multiple: false
   })
 
@@ -184,32 +184,43 @@ export default function RoomPage() {
     
     let content = input.trim()
     
-    // Handle file upload
+    // Handle file upload to Cloudinary
     if (selectedFile) {
-      // In a real app, you'd upload to a server/S3 and get a URL
-      // For now, we'll use a data URL for images
-      if (selectedFile.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const fileUrl = e.target?.result as string
-          content = content ? `${content}\n\n![${selectedFile.name}](${fileUrl})` : `![${selectedFile.name}](${fileUrl})`
-          
-          const msg = {
-            type: 'chat',
-            content,
-            userId,
-            roomName,
-          }
-          
-          setInput('')
-          setSelectedFile(null)
-          setLoadingBot(true)
-          socket.send(JSON.stringify(msg))
+      try {
+        setLoadingBot(true)
+        
+        // Upload to backend
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+        
+        const token = window.localStorage.getItem('token')
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        })
+        
+        if (!uploadResponse.ok) {
+          throw new Error('File upload failed')
         }
-        reader.readAsDataURL(selectedFile)
+        
+        const uploadData = await uploadResponse.json()
+        const fileUrl = uploadData.url
+        
+        // Add file to message content as markdown
+        if (selectedFile.type.startsWith('image/')) {
+          content = content ? `${content}\n\n![${selectedFile.name}](${fileUrl})` : `![${selectedFile.name}](${fileUrl})`
+        } else {
+          content = content ? `${content}\n\n📎 [${selectedFile.name}](${fileUrl})` : `📎 [${selectedFile.name}](${fileUrl})`
+        }
+        
+      } catch (error) {
+        console.error('File upload error:', error)
+        setLoadingBot(false)
+        alert('Failed to upload file. Please try again.')
         return
-      } else {
-        content = content ? `${content}\n\n📎 ${selectedFile.name}` : `📎 ${selectedFile.name}`
       }
     }
     
