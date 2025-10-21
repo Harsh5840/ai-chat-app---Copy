@@ -4,6 +4,8 @@ dotenv.config();
 import express from "express";
 const app = express();
 import cors from "cors";
+import session from "express-session";
+import passport from "./config/passport.js";
 import { mainRouter}  from "./routes/index.js";
 
 
@@ -18,6 +20,21 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' })); //we added this line to parse the request body as json
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Global error handler
 app.use((err, req, res, next) => {

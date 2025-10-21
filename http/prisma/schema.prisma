@@ -11,9 +11,11 @@ model User {
   id       Int           @id @default(autoincrement())
   email    String        @unique
   username String
-  password String
+  password String?       // Make password optional for OAuth users
   name     String?
-  chats    Chat[]         // chats created by this user
+  googleId String?       @unique // Google OAuth ID
+  avatar   String?       // Profile picture URL
+  chats    Chat[]        // chats created by this user
   rooms    Room[]        // rooms created by this user
   members  RoomMember[]  // rooms joined by this user
 }
