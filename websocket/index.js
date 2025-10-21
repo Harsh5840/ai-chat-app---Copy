@@ -53,6 +53,8 @@ wss.on('connection', (socket) => {
         }
 
         currentRoom = msg.roomName;
+        const { userId } = msg;
+        
         if (!rooms[currentRoom]) rooms[currentRoom] = [];
         if (!rooms[currentRoom].includes(socket)) {
           rooms[currentRoom].push(socket);
@@ -60,7 +62,29 @@ wss.on('connection', (socket) => {
         
         console.log(`User joined room: ${currentRoom} (${rooms[currentRoom].length} members)`);
         
-        // Send join confirmation
+        // Get username for join notification
+        let username = 'A user';
+        if (userId) {
+          try {
+            const userResponse = await axios.get(
+              `${HTTP_SERVICE_URL}/api/v1/user/${userId}`,
+              { timeout: 5000 }
+            );
+            username = userResponse.data.username || 'A user';
+          } catch (e) {
+            console.error('Could not fetch username for join notification:', e.message);
+          }
+        }
+        
+        // Broadcast join notification to all users in room
+        broadcastToRoom(currentRoom, {
+          type: 'user-joined',
+          username,
+          userId,
+          memberCount: rooms[currentRoom].length
+        });
+        
+        // Send join confirmation to the user who joined
         safeSend(socket, {
           type: 'joined',
           roomName: currentRoom,

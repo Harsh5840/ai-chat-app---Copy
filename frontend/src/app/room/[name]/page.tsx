@@ -11,6 +11,7 @@ import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useDropzone } from 'react-dropzone'
+import ToastNotification, { showToast } from '@/components/toast-notification'
 
 type ChatMessage = {
   sender: 'user' | 'ai'
@@ -71,13 +72,20 @@ export default function RoomPage() {
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}`)
     const roomName = name.startsWith('room-') ? name : `room-${name}`;
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'join', roomName }))
+      ws.send(JSON.stringify({ type: 'join', roomName, userId }))
       console.log(`Joined room: ${roomName}`)
     }
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data)
       console.log('WebSocket received:', msg);
+      
+      if (msg.type === 'user-joined') {
+        // Show toast notification when a user joins
+        if (msg.userId !== userId) {
+          showToast(`${msg.username} joined the room`, 'info')
+        }
+      }
       
       if (msg.type === 'typing') {
         setTypingUsers(prev => {
@@ -107,6 +115,7 @@ export default function RoomPage() {
       if (msg.type === 'error') {
         console.error('Chat error:', msg.message)
         setLoadingBot(false)
+        showToast(msg.message, 'error')
         // Optionally show error to user
         setChat((prev) => [
           ...prev,
@@ -249,6 +258,9 @@ export default function RoomPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden font-sans">
+      {/* Toast Notifications */}
+      <ToastNotification />
+      
       {/* Subtle animated background */}
       <div className="fixed inset-0 opacity-30">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 animate-pulse"></div>
