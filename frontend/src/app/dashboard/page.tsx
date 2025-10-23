@@ -5,6 +5,7 @@ import { ArrowRight, ArrowLeft, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import axiosAuth from "@/lib/axiosAuth"
+import axios from 'axios'
 import CreateRoomModal from "@/components/create-room-modal"
 
 interface Room {
@@ -54,10 +55,10 @@ export default function Dashboard() {
         const response = await axiosAuth.get("/dashboard");
         setRooms(response.data);
         console.log("Fetched rooms:", response.data);
-      } catch (error: any) {
-        console.error("Error fetching rooms:",error);
+      } catch (error: unknown) {
+        console.error("Error fetching rooms:", error);
         // Redirect to login if unauthorized
-        if (error.response?.status === 401) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
         }
       }

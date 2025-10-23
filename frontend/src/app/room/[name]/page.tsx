@@ -64,6 +64,9 @@ export default function RoomPage() {
   const router = useRouter()
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Prism style typed for SyntaxHighlighter
+  const prismStyle = vscDarkPlus as unknown as { [key: string]: React.CSSProperties }
+
   // Scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -413,31 +416,38 @@ export default function RoomPage() {
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          code({ className, children, ...props }: any) {
+                          code(props: React.ComponentProps<'code'>) {
+                            const { className, children } = props
                             const match = /language-(\w+)/.exec(className || '')
                             const inline = !className
-                            return !inline && match ? (
-                              <SyntaxHighlighter
-                                style={vscDarkPlus as any}
-                                language={match[1]}
-                                PreTag="div"
-                                className="rounded-lg my-2"
-                                {...props}
-                              >
-                                {String(children).replace(/\n$/, '')}
-                              </SyntaxHighlighter>
-                            ) : (
-                              <code className={`${className} bg-black/30 px-1.5 py-0.5 rounded text-sm`} {...props}>
+                            if (!inline && match) {
+                              // style has an any-like type from the syntax highlighter lib
+                              return (
+                                <SyntaxHighlighter
+                                  style={prismStyle}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  className="rounded-lg my-2"
+                                >
+                                  {String(children).replace(/\n$/, '')}
+                                </SyntaxHighlighter>
+                              )
+                            }
+
+                            return (
+                              <code className={`${className} bg-black/30 px-1.5 py-0.5 rounded text-sm`}>
                                 {children}
                               </code>
                             )
                           },
-                          img({ src, alt }: any) {
+                          img(props: React.ComponentProps<'img'>) {
+                            const { src, alt } = props
+                            if (!src) return null
                             return (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img 
-                                src={src} 
-                                alt={alt || ''} 
+                              <img
+                                src={String(src)}
+                                alt={alt || ''}
                                 className="rounded-lg my-2 max-w-full h-auto"
                               />
                             )
