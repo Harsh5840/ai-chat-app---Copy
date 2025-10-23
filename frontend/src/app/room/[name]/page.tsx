@@ -108,9 +108,11 @@ export default function RoomPage() {
   useEffect(() => {
     if (!userId) return
     // Prefer explicit WS URL, otherwise construct from API host
-    const rawApi = process.env.NEXT_PUBLIC_API_URL || 'https://ai-chat-app-copy-l7cx.onrender.com'
-    const API_HOST_FOR_WS = rawApi.replace(/^http/, 'ws').replace(/\/$/, '')
-    const WS_URL = process.env.NEXT_PUBLIC_WS_URL || API_HOST_FOR_WS
+  const rawApi = process.env.NEXT_PUBLIC_API_URL || 'https://ai-chat-app-copy-l7cx.onrender.com'
+  const API_HOST_FOR_WS = rawApi.replace(/^http/, 'ws').replace(/\/$/, '')
+  // Final fallback to your deployed websocket URL
+  const DEFAULT_WS = 'wss://ai-chat-app-copy-1-z2kd.onrender.com'
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || API_HOST_FOR_WS || DEFAULT_WS
 
     if (!WS_URL) {
       console.warn('WebSocket URL not configured. WebSocket features will be disabled.')
