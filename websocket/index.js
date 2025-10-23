@@ -5,7 +5,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const PORT = process.env.PORT || 7070;
-const HTTP_SERVICE_URL = process.env.HTTP_SERVICE_URL || 'http://localhost:3001';
+// Prefer explicit HTTP_SERVICE_URL, otherwise use your deployed http service as a safe default
+const HTTP_SERVICE_URL = (process.env.HTTP_SERVICE_URL || 'https://ai-chat-app-copy-l7cx.onrender.com').replace(/\/$/, '');
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 const wss = new WebSocketServer({ port: PORT }, () => {

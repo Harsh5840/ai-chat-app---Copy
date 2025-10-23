@@ -73,11 +73,12 @@ export default function RoomPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        const API_HOST = (process.env.NEXT_PUBLIC_API_URL || 'https://ai-chat-app-copy-l7cx.onrender.com').replace(/\/$/, '')
         const roomName = name.startsWith('room-') ? name : `room-${name}`;
         const token = window.localStorage.getItem('token')
         
         // Fetch room details including assistants
-        const roomRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/room/${roomName}`, {
+        const roomRes = await fetch(`${API_HOST}/api/v1/room/${roomName}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -89,7 +90,7 @@ export default function RoomPage() {
         }
         
         // Fetch chat history
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/history/${roomName}`)
+  const res = await fetch(`${API_HOST}/api/v1/chat/history/${roomName}`)
         const data = await res.json()
         if (data.history) setChat(data.history)
       } catch (err) {
@@ -106,8 +107,17 @@ export default function RoomPage() {
   // WebSocket connection
   useEffect(() => {
     if (!userId) return
+    // Prefer explicit WS URL, otherwise construct from API host
+    const rawApi = process.env.NEXT_PUBLIC_API_URL || 'https://ai-chat-app-copy-l7cx.onrender.com'
+    const API_HOST_FOR_WS = rawApi.replace(/^http/, 'ws').replace(/\/$/, '')
+    const WS_URL = process.env.NEXT_PUBLIC_WS_URL || API_HOST_FOR_WS
 
-    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}`)
+    if (!WS_URL) {
+      console.warn('WebSocket URL not configured. WebSocket features will be disabled.')
+      return
+    }
+
+    const ws = new WebSocket(WS_URL)
     const roomName = name.startsWith('room-') ? name : `room-${name}`;
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', roomName, userId }))

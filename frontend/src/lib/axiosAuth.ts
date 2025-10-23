@@ -1,8 +1,10 @@
 // lib/axiosAuth.ts
 import axios from "axios";
 
+const API_HOST = process.env.NEXT_PUBLIC_API_URL || 'https://ai-chat-app-copy-l7cx.onrender.com'
+
 const axiosAuth = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL + "/api/v1",
+  baseURL: `${API_HOST}/api/v1`,
 });
 
 // Intercept request to attach token
