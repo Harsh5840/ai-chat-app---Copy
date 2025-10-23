@@ -93,6 +93,14 @@ chatRouter.post('/', async (req, res) => {
       where: { name: roomName },
       include: {
         assistant: true,
+        roomAssistants: {
+          include: {
+            assistant: true
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        },
         chats: {
           orderBy: { createdAt: 'asc' },
           take: 50, // Limit chat history to prevent token overflow
@@ -122,7 +130,39 @@ chatRouter.post('/', async (req, res) => {
       },
     });
 
-    const systemPrompt = `You are a helpful assistant with the following description: "${room.assistant.description}". You are only allowed to answer questions based on your description. If a question is outside of your knowledge domain, respond with "Sorry, I can only answer questions related to ${room.assistant.description}".`;
+    // Determine which AI should respond
+    // For multi-AI rooms, rotate or use all assistants
+    const assistants = room.roomAssistants.length > 0 
+      ? room.roomAssistants.map(ra => ra.assistant)
+      : [room.assistant];
+
+    // Check if user @mentioned a specific AI
+    const mentionMatch = content.match(/@(\w+GPT)/i);
+    let selectedAssistant = assistants[0]; // Default to first AI
+    
+    if (mentionMatch) {
+      const mentionedName = mentionMatch[1];
+      const mentioned = assistants.find(a => a.name.toLowerCase() === mentionedName.toLowerCase());
+      if (mentioned) {
+        selectedAssistant = mentioned;
+      }
+    } else if (assistants.length > 1) {
+      // For multi-AI rooms without mention, rotate based on chat count
+      const aiChatCount = room.chats.filter(c => c.sender === 'GPT').length;
+      selectedAssistant = assistants[aiChatCount % assistants.length];
+    }
+
+    // Build system prompt for multi-AI collaboration
+    let systemPrompt;
+    if (assistants.length > 1) {
+      const aiList = assistants.map(a => `${a.name} (${a.description})`).join(', ');
+      systemPrompt = `You are ${selectedAssistant.name}, part of a collaborative AI team including: ${aiList}. 
+Your expertise: "${selectedAssistant.description}". 
+Provide insights from your domain. If the question is outside your expertise, acknowledge it and suggest which other AI in the team might help better.
+You can reference other AIs using @AIName format.`;
+    } else {
+      systemPrompt = `You are a helpful assistant with the following description: "${selectedAssistant.description}". You are only allowed to answer questions based on your description. If a question is outside of your knowledge domain, respond with "Sorry, I can only answer questions related to ${selectedAssistant.description}".`;
+    }
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -179,7 +219,9 @@ chatRouter.post('/', async (req, res) => {
         id: aiMessage.id,
         content: aiMessage.content,
         sender: aiMessage.sender,
-        createdAt: aiMessage.createdAt
+        createdAt: aiMessage.createdAt,
+        aiName: selectedAssistant.name, // Include which AI responded
+        aiIcon: selectedAssistant.imageUrl
       }
     });
   } catch (err) {

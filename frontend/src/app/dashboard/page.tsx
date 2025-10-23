@@ -19,6 +19,12 @@ interface Room {
     prompt: string;
     imageUrl?: string;
   };
+  assistants?: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    imageUrl?: string;
+  }>;
 }
 
 export default function Dashboard() {
@@ -153,19 +159,43 @@ export default function Dashboard() {
             >
               {/* Icon/Image Header */}
               <div className={`w-full h-48 relative bg-gradient-to-br ${getAssistantGradient(room.assistant.name)} flex items-center justify-center`}>
-                <div className="text-9xl z-10 relative animate-bounce-slow filter drop-shadow-2xl">
-                  {getAssistantIcon(room.assistant.name)}
-                </div>
+                {/* Show multiple AI icons if multi-AI room */}
+                {room.assistants && room.assistants.length > 1 ? (
+                  <div className="flex gap-4 z-10 relative">
+                    {room.assistants.slice(0, 3).map((assistant: { name: string }, i: number) => (
+                      <div
+                        key={i}
+                        className={`text-6xl animate-bounce-slow filter drop-shadow-2xl ${i === 1 ? 'text-7xl' : ''}`}
+                        style={{ animationDelay: `${i * 200}ms` }}
+                      >
+                        {getAssistantIcon(assistant.name)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-9xl z-10 relative animate-bounce-slow filter drop-shadow-2xl">
+                    {getAssistantIcon(room.assistant.name)}
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
-                  <span className="text-white text-xs font-bold uppercase tracking-wide">{room.assistant.name}</span>
-                </div>
+                {room.assistants && room.assistants.length > 1 ? (
+                  <div className="absolute top-3 right-3 bg-purple-500/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
+                    <span className="text-white text-xs font-bold uppercase tracking-wide">Multi-AI 🤝</span>
+                  </div>
+                ) : (
+                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
+                    <span className="text-white text-xs font-bold uppercase tracking-wide">{room.assistant.name}</span>
+                  </div>
+                )}
               </div>
               
               <CardHeader className="pb-3 pt-4">
                 <CardTitle className="text-white text-xl font-bold truncate">{room.name}</CardTitle>
                 <CardDescription className="text-gray-400 text-sm line-clamp-2 mt-1">
-                  {room.assistant.description || room.description || "Your AI assistant room"}
+                  {room.assistants && room.assistants.length > 1 
+                    ? `Collaborative AI team: ${room.assistants.map((a: { name: string }) => a.name).join(', ')}`
+                    : (room.assistant.description || room.description || "Your AI assistant room")
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow" />

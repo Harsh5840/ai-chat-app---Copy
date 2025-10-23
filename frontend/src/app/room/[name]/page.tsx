@@ -20,11 +20,33 @@ type ChatMessage = {
   fileUrl?: string
   fileType?: string
   fileName?: string
+  aiName?: string
+  aiIcon?: string
 }
 
 type TypingUser = {
   username: string
   userId: number
+}
+
+type Assistant = {
+  id: number
+  name: string
+  description: string
+  imageUrl?: string
+}
+
+const getAssistantIcon = (name: string) => {
+  const icons: { [key: string]: string } = {
+    'DevGPT': '💻',
+    'ChefGPT': '👨‍🍳',
+    'DocGPT': '⚕️',
+    'LawGPT': '⚖️',
+    'FitGPT': '💪',
+    'FinanceGPT': '💰',
+    'StoryGPT': '📚'
+  }
+  return icons[name] || '🤖'
 }
 
 export default function RoomPage() {
@@ -36,6 +58,7 @@ export default function RoomPage() {
   const [loadingBot, setLoadingBot] = useState(false)
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [roomAssistants, setRoomAssistants] = useState<Assistant[]>([])
   const userId = typeof window !== 'undefined' ? Number(window.localStorage.getItem('userId')) : null
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -46,11 +69,26 @@ export default function RoomPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chat, typingUsers])
 
-  // Load chat history
+  // Load chat history and room info
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         const roomName = name.startsWith('room-') ? name : `room-${name}`;
+        const token = window.localStorage.getItem('token')
+        
+        // Fetch room details including assistants
+        const roomRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/room/${roomName}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        const roomData = await roomRes.json()
+        
+        if (roomData.assistants) {
+          setRoomAssistants(roomData.assistants)
+        }
+        
+        // Fetch chat history
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/history/${roomName}`)
         const data = await res.json()
         if (data.history) setChat(data.history)
@@ -102,7 +140,13 @@ export default function RoomPage() {
           const updated: ChatMessage[] = [
             ...prev,
             { sender: 'user', content: msg.userMessage.content, username: msg.userMessage.username },
-            { sender: 'ai', content: msg.aiMessage?.content || '[No reply]', username: 'Bot' },
+            { 
+              sender: 'ai', 
+              content: msg.aiMessage?.content || '[No reply]', 
+              username: 'Bot',
+              aiName: msg.aiMessage?.aiName,
+              aiIcon: msg.aiMessage?.aiIcon
+            },
           ];
           console.log('Updated chat state:', updated);
           return updated;
@@ -281,7 +325,25 @@ export default function RoomPage() {
             <h1 className="text-2xl font-bold text-white">
               <span className="text-cyan-400">{name}</span>
             </h1>
-            <p className="text-xs text-gray-400 mt-1">AI-Powered Chat Room</p>
+            {roomAssistants.length > 0 && (
+              <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                {roomAssistants.map((assistant) => (
+                  <div
+                    key={assistant.id}
+                    className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 text-xs"
+                  >
+                    <span className="text-lg">{getAssistantIcon(assistant.name)}</span>
+                    <span className="text-cyan-400 font-medium">{assistant.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {roomAssistants.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">AI-Powered Chat Room</p>
+            )}
+            {roomAssistants.length > 1 && (
+              <p className="text-xs text-gray-400 mt-1">💡 Multi-AI Collaboration Active</p>
+            )}
           </div>
           
           <div className="w-10"></div>
@@ -312,14 +374,17 @@ export default function RoomPage() {
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
                 <div className="flex flex-col max-w-[75%] sm:max-w-[60%]">
-                  {/* Username label above message */}
+                  {/* Username/AI label above message */}
                   {message.username && (
-                    <div className={`text-xs font-bold mb-1 px-2 ${
+                    <div className={`text-xs font-bold mb-1 px-2 flex items-center gap-1 ${
                       message.sender === 'user' 
-                        ? 'text-right text-cyan-400' 
-                        : 'text-left text-purple-400'
+                        ? 'justify-end text-cyan-400' 
+                        : 'justify-start text-purple-400'
                     }`}>
-                      {message.username}
+                      {message.sender === 'ai' && message.aiName && (
+                        <span className="text-base">{getAssistantIcon(message.aiName)}</span>
+                      )}
+                      <span>{message.sender === 'ai' && message.aiName ? message.aiName : message.username}</span>
                     </div>
                   )}
                   

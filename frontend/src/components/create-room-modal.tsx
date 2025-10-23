@@ -25,11 +25,19 @@ const botTypes = [
 
 export default function CreateRoomModal({ isOpen, onClose, onRoomCreated }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState('')
-  const [selectedBot, setSelectedBot] = useState('')
+  const [selectedBots, setSelectedBots] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   if (!isOpen) return null
+
+  const toggleBot = (botId: string) => {
+    setSelectedBots(prev => 
+      prev.includes(botId) 
+        ? prev.filter(id => id !== botId)
+        : [...prev, botId]
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,8 +48,8 @@ export default function CreateRoomModal({ isOpen, onClose, onRoomCreated }: Crea
       return
     }
 
-    if (!selectedBot) {
-      setError('Please select a bot type')
+    if (selectedBots.length === 0) {
+      setError('Please select at least one AI assistant')
       return
     }
 
@@ -51,16 +59,21 @@ export default function CreateRoomModal({ isOpen, onClose, onRoomCreated }: Crea
       // Create room via API
       await axiosAuth.post('/room/create', {
         name: roomName.trim(),
-        botType: selectedBot,
+        botTypes: selectedBots, // Send array of bot types
       })
 
       // Reset form and close modal
       setRoomName('')
-      setSelectedBot('')
+      setSelectedBots([])
       onRoomCreated()
       onClose()
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create room')
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosError = err as { response?: { data?: { error?: string } } }
+        setError(axiosError.response?.data?.error || 'Failed to create room')
+      } else {
+        setError('Failed to create room')
+      }
     } finally {
       setLoading(false)
     }
@@ -104,15 +117,20 @@ export default function CreateRoomModal({ isOpen, onClose, onRoomCreated }: Crea
 
           {/* Bot Selection */}
           <div className="space-y-3">
-            <Label className="text-white text-sm font-medium">Select AI Assistant</Label>
+            <Label className="text-white text-sm font-medium">
+              Select AI Assistants {selectedBots.length > 0 && (
+                <span className="text-cyan-400">({selectedBots.length} selected)</span>
+              )}
+            </Label>
+            <p className="text-gray-400 text-xs">💡 Select multiple AIs for collaborative problem-solving!</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {botTypes.map((bot) => (
                 <button
                   key={bot.id}
                   type="button"
-                  onClick={() => setSelectedBot(bot.id)}
+                  onClick={() => toggleBot(bot.id)}
                   className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    selectedBot === bot.id
+                    selectedBots.includes(bot.id)
                       ? 'border-cyan-400 bg-cyan-500/10 shadow-lg shadow-cyan-500/20'
                       : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
                   }`}
@@ -124,6 +142,9 @@ export default function CreateRoomModal({ isOpen, onClose, onRoomCreated }: Crea
                       <h3 className="text-white font-semibold">{bot.name}</h3>
                       <p className="text-gray-400 text-sm mt-1">{bot.description}</p>
                     </div>
+                    {selectedBots.includes(bot.id) && (
+                      <div className="text-cyan-400 text-lg">✓</div>
+                    )}
                   </div>
                 </button>
               ))}

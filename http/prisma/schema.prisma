@@ -28,7 +28,8 @@ model GptAssistant {
   imageUrl    String?            // Optional image/icon
   createdAt   DateTime @default(now())  
   updatedAt   DateTime @updatedAt
-  rooms       Room[]             // each assistant can have MULTIPLE rooms
+  rooms       Room[]             // each assistant can have MULTIPLE rooms (legacy)
+  roomAssistants RoomAssistant[] // new many-to-many relation
 }
 
 model Room {
@@ -38,9 +39,21 @@ model Room {
   chats          Chat[]
   userId         Int?    // user who created this room
   user           User?          @relation(fields: [userId], references: [id])
-  assistantId    Int            // each room has ONE assistant, but multiple rooms can share the same assistant
-  assistant      GptAssistant   @relation(fields: [assistantId], references: [id])
+  assistantId    Int?           // legacy: single assistant (nullable for multi-AI rooms)
+  assistant      GptAssistant?  @relation(fields: [assistantId], references: [id])
   members        RoomMember[]
+  roomAssistants RoomAssistant[] // new: multiple assistants per room
+}
+
+model RoomAssistant {
+  id          Int          @id @default(autoincrement())
+  roomId      Int
+  assistantId Int
+  order       Int          @default(0) // order for AI rotation
+  room        Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  assistant   GptAssistant @relation(fields: [assistantId], references: [id])
+  
+  @@unique([roomId, assistantId])
 }
 
 model RoomMember {

@@ -20,6 +20,14 @@ roomRouter.get('/:name', authMiddleware, async (req, res) => {
       where: { name },
       include: {
         assistant: true,
+        roomAssistants: {
+          include: {
+            assistant: true
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        },
         chats: {
           include: { 
             user: {
@@ -44,6 +52,19 @@ roomRouter.get('/:name', authMiddleware, async (req, res) => {
       id: room.id,
       name: room.name,
       description: room.description,
+      assistants: room.roomAssistants.length > 0 
+        ? room.roomAssistants.map(ra => ({
+            id: ra.assistant.id,
+            name: ra.assistant.name,
+            description: ra.assistant.description,
+            imageUrl: ra.assistant.imageUrl
+          }))
+        : [{
+            id: room.assistant.id,
+            name: room.assistant.name,
+            description: room.assistant.description,
+            imageUrl: room.assistant.imageUrl
+          }],
       assistant: {
         id: room.assistant.id,
         name: room.assistant.name,
@@ -87,15 +108,18 @@ roomRouter.post('/:name/chat',authMiddleware, async (req, res) => {
 // POST /room/create - Create a new custom room
 roomRouter.post('/create', authMiddleware, async (req, res) => {
   try {
-    const { name, botType } = req.body;
+    const { name, botTypes } = req.body;
 
     // Input validation
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ error: 'Valid room name is required' });
     }
 
-    if (!botType || typeof botType !== 'string') {
-      return res.status(400).json({ error: 'Bot type is required' });
+    // Support both single botType and multiple botTypes
+    const assistantNames = Array.isArray(botTypes) ? botTypes : (req.body.botType ? [req.body.botType] : []);
+    
+    if (assistantNames.length === 0) {
+      return res.status(400).json({ error: 'At least one bot type is required' });
     }
 
     // Check if room already exists
@@ -107,24 +131,49 @@ roomRouter.post('/create', authMiddleware, async (req, res) => {
       return res.status(409).json({ error: 'Room with this name already exists' });
     }
 
-    // Find the assistant by bot type
-    const assistant = await prisma.gptAssistant.findFirst({
-      where: { name: botType }
+    // Find all assistants by bot types
+    const assistants = await prisma.gptAssistant.findMany({
+      where: { 
+        name: { in: assistantNames }
+      }
     });
 
-    if (!assistant) {
-      return res.status(404).json({ error: 'Bot type not found' });
+    if (assistants.length === 0) {
+      return res.status(404).json({ error: 'No valid bot types found' });
     }
 
-    // Create the room
+    if (assistants.length !== assistantNames.length) {
+      const foundNames = assistants.map(a => a.name);
+      const missingNames = assistantNames.filter(n => !foundNames.includes(n));
+      return res.status(404).json({ error: `Bot types not found: ${missingNames.join(', ')}` });
+    }
+
+    // Create the room with multiple assistants
+    const assistantDescriptions = assistants.map(a => a.name).join(', ');
     const newRoom = await prisma.room.create({
       data: {
         name: `room-${name.trim()}`,
-        description: `Custom ${assistant.name} room`,
-        assistantId: assistant.id
+        description: assistants.length > 1 
+          ? `Multi-AI collaboration room with ${assistantDescriptions}`
+          : `Custom ${assistants[0].name} room`,
+        assistantId: assistants[0].id, // Set primary assistant for backward compatibility
+        roomAssistants: {
+          create: assistants.map((assistant, index) => ({
+            assistantId: assistant.id,
+            order: index
+          }))
+        }
       },
       include: {
-        assistant: true
+        assistant: true,
+        roomAssistants: {
+          include: {
+            assistant: true
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        }
       }
     });
 
@@ -132,6 +181,13 @@ roomRouter.post('/create', authMiddleware, async (req, res) => {
       id: newRoom.id,
       name: newRoom.name,
       description: newRoom.description,
+      assistants: newRoom.roomAssistants.map(ra => ({
+        id: ra.assistant.id,
+        name: ra.assistant.name,
+        description: ra.assistant.description,
+        icon: ra.assistant.imageUrl
+      })),
+      // Legacy field for backward compatibility
       assistant: {
         id: newRoom.assistant.id,
         name: newRoom.assistant.name,

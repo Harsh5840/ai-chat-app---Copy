@@ -10,10 +10,27 @@ const dashboardRouter = Router();
   try {
     const rooms = await prisma.room.findMany({
       include: {
-        assistant: true, // include GPT assistant details
+        assistant: true, // include GPT assistant details (primary)
+        roomAssistants: {
+          include: {
+            assistant: true
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        }
       },
     });
-    res.json(rooms);
+    
+    // Format rooms to include all assistants
+    const formattedRooms = rooms.map(room => ({
+      ...room,
+      assistants: room.roomAssistants.length > 0 
+        ? room.roomAssistants.map(ra => ra.assistant)
+        : [room.assistant]
+    }));
+    
+    res.json(formattedRooms);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to load rooms' });
