@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import http from 'http';
 
 dotenv.config();
 
@@ -9,7 +10,16 @@ const PORT = process.env.PORT || 7070;
 const HTTP_SERVICE_URL = (process.env.HTTP_SERVICE_URL || 'https://ai-chat-app-copy-l7cx.onrender.com').replace(/\/$/, '');
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 
-const wss = new WebSocketServer({ port: PORT }, () => {
+// Create a small HTTP server so Render's health checks (HTTP) succeed.
+const server = http.createServer((req, res) => {
+  // Basic response for root and any path — this keeps an HTTP listener for Render
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('WebSocket server is running');
+});
+
+const wss = new WebSocketServer({ server });
+
+server.listen(PORT, () => {
   console.log(`WebSocket server is running on port ${PORT}`);
   console.log(`HTTP service URL: ${HTTP_SERVICE_URL}`);
 });
@@ -215,3 +225,27 @@ wss.on('connection', (socket) => {
     console.error('WebSocket error:', error.message);
   });
 });
+
+// Graceful shutdown
+const shutdown = () => {
+  console.log('Shutting down gracefully...');
+  try {
+    wss.clients.forEach(client => {
+      try { client.close(); } catch (e) {}
+    });
+  } catch (e) {}
+
+  try {
+    wss.close(() => console.log('WebSocket server closed'));
+  } catch (e) {}
+
+  try {
+    server.close(() => console.log('HTTP server closed'));
+  } catch (e) {}
+
+  // Give some time for sockets to close
+  setTimeout(() => process.exit(0), 2000);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
