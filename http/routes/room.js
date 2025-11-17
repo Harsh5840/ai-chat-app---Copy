@@ -156,6 +156,7 @@ roomRouter.post('/create', authMiddleware, async (req, res) => {
         description: assistants.length > 1 
           ? `Multi-AI collaboration room with ${assistantDescriptions}`
           : `Custom ${assistants[0].name} room`,
+        userId: req.userId, // Link room to creator
         assistantId: assistants[0].id, // Set primary assistant for backward compatibility
         roomAssistants: {
           create: assistants.map((assistant, index) => ({

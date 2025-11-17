@@ -89,8 +89,12 @@ chatRouter.post('/', async (req, res) => {
   }
 
   try {
+    // Decode room name in case it's URL encoded
+    const decodedRoomName = decodeURIComponent(roomName);
+    console.log('Chat request:', { userId, roomName, decodedRoomName, contentLength: content.length });
+    
     const room = await prisma.room.findUnique({
-      where: { name: roomName },
+      where: { name: decodedRoomName },
       include: {
         assistant: true,
         roomAssistants: {
@@ -109,6 +113,7 @@ chatRouter.post('/', async (req, res) => {
     });
 
     if (!room || !room.assistant) {
+      console.error('Room lookup failed:', { decodedRoomName, found: !!room, hasAssistant: room?.assistant });
       return res.status(404).json({ error: 'Room or assistant not found' });
     }
 
