@@ -145,6 +145,9 @@ wss.on('connection', (socket) => {
           });
           return;
         }
+        
+        // Decode room name to match database
+        const decodedRoomName = decodeURIComponent(roomName);
 
         let username = 'Unknown';
         try {
@@ -160,7 +163,7 @@ wss.on('connection', (socket) => {
         try {
           const response = await axios.post(
             `${HTTP_SERVICE_URL}/api/v1/chat`,
-            { userId, roomName, content },
+            { userId, roomName: decodedRoomName, content },
             { timeout: REQUEST_TIMEOUT }
           );
 
@@ -176,12 +179,14 @@ wss.on('connection', (socket) => {
             aiMessage: {
               content: response.data.aiMessage.content,
               sender: 'ai',
-              createdAt: response.data.aiMessage.createdAt
+              createdAt: response.data.aiMessage.createdAt,
+              aiName: response.data.aiMessage.aiName,
+              aiIcon: response.data.aiMessage.aiIcon
             }
           };
 
           // Broadcast to room
-          broadcastToRoom(roomName, payload);
+          broadcastToRoom(decodedRoomName, payload);
           
         } catch (err) {
           console.error('Error processing chat message:', err.message);
