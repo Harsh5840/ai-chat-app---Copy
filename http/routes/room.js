@@ -200,4 +200,33 @@ roomRouter.post('/create', authMiddleware, async (req, res) => {
   }
 });
 
+
+// DELETE /room/:id - Only allow deleting rooms created by the user (not seeded rooms)
+roomRouter.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    const userId = req.user?.id;
+    if (!roomId || !userId) {
+      return res.status(400).json({ error: 'Invalid room or user' });
+    }
+
+    // Find the room
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    // Prevent deleting seeded rooms (no userId)
+    if (!room.userId || room.userId !== userId) {
+      return res.status(403).json({ error: 'Cannot delete seeded or other users\' rooms' });
+    }
+
+    // Delete the room (cascade deletes RoomAssistants, RoomMembers, Chats)
+    await prisma.room.delete({ where: { id: roomId } });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Room delete error:', err);
+    res.status(500).json({ error: 'Failed to delete room' });
+  }
+});
+
 export { roomRouter };

@@ -26,6 +26,7 @@ interface Room {
     description?: string;
     imageUrl?: string;
   }>;
+  userId?: number; // Add userId for user-created rooms
 }
 
 export default function Dashboard() {
@@ -33,6 +34,15 @@ export default function Dashboard() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const router = useRouter()
+  // Get current userId from localStorage
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userId = window.localStorage.getItem('userId')
+      setCurrentUserId(userId ? Number(userId) : null)
+    }
+  }, [])
 
   useEffect(() => {
     const getGreeting = () => {
@@ -189,7 +199,6 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-              
               <CardHeader className="pb-3 pt-4">
                 <CardTitle className="text-white text-xl font-bold truncate">{room.name}</CardTitle>
                 <CardDescription className="text-gray-400 text-sm line-clamp-2 mt-1">
@@ -200,7 +209,7 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow" />
-              <CardFooter className="pt-0 pb-4">
+              <CardFooter className="pt-0 pb-4 flex gap-2">
                 <Button
                   className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/50 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-400/60 font-semibold rounded-xl py-3 text-base transition-all"
                   onClick={() => router.push(`/room/${room.name}`)}
@@ -208,6 +217,25 @@ export default function Dashboard() {
                   Enter Room
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
+                {/* Show delete button only for user-created rooms */}
+                {room.userId && currentUserId && room.userId === currentUserId && (
+                  <Button
+                    variant="destructive"
+                    className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-lg shadow-red-500/50 hover:from-red-400 hover:to-pink-400 hover:shadow-xl hover:shadow-red-400/60 font-semibold rounded-xl py-3 text-base transition-all"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!window.confirm(`Are you sure you want to delete room '${room.name}'? This cannot be undone.`)) return;
+                      try {
+                        await axiosAuth.delete(`/room/${room.id}`);
+                        setRooms((prev) => prev.filter((r) => r.id !== room.id));
+                      } catch {
+                        alert('Failed to delete room.');
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}
