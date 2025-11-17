@@ -51,6 +51,7 @@ const getAssistantIcon = (name: string) => {
 
 export default function RoomPage() {
   const { name } = useParams() as { name: string }
+  const decodedName = decodeURIComponent(name)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [input, setInput] = useState('')
   const [chat, setChat] = useState<ChatMessage[]>([])
@@ -77,7 +78,7 @@ export default function RoomPage() {
     const fetchHistory = async () => {
       try {
         const API_HOST = (process.env.NEXT_PUBLIC_API_URL || 'https://ai-chat-app-copy-l7cx.onrender.com').replace(/\/$/, '')
-        const roomName = name.startsWith('room-') ? name : `room-${name}`;
+        const roomName = decodedName.startsWith('room-') ? decodedName : `room-${decodedName}`;
         const token = window.localStorage.getItem('token')
         
         // Fetch room details including assistants
@@ -104,7 +105,7 @@ export default function RoomPage() {
     }
 
     fetchHistory()
-  }, [name])   
+  }, [name, decodedName])   
 
 
   // WebSocket connection
@@ -123,7 +124,7 @@ export default function RoomPage() {
     }
 
     const ws = new WebSocket(WS_URL)
-    const roomName = name.startsWith('room-') ? name : `room-${name}`;
+    const roomName = decodedName.startsWith('room-') ? decodedName : `room-${decodedName}`;
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', roomName, userId }))
       console.log(`Joined room: ${roomName}`)
@@ -195,13 +196,13 @@ export default function RoomPage() {
     setSocket(ws)
 
     return () => ws.close()
-  }, [name, userId])
+  }, [name, decodedName, userId])
 
   // Handle typing indicator
   const handleTyping = () => {
     if (!socket || !userId) return
     
-    const roomName = name.startsWith('room-') ? name : `room-${name}`;
+    const roomName = decodedName.startsWith('room-') ? decodedName : `room-${decodedName}`;
     
     // Send typing start
     socket.send(JSON.stringify({
