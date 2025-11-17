@@ -22,13 +22,14 @@ const authMiddleware = async (req, res, next) => {
 
         const decoded = jwt.verify(tokenValue, JSON_WEB_TOKEN_SECRET);
         
-        if (!decoded.id) {
+                if (!decoded.userId) {
             return res.status(403).json({
                 message: "Invalid token payload"
             });
         }
 
-        req.userId = decoded.id;
+                req.userId = decoded.userId;
+                req.user = { id: decoded.userId, email: decoded.email };
         next();
 
     } catch (error) {

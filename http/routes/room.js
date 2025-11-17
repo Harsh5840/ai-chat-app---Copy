@@ -205,7 +205,7 @@ roomRouter.post('/create', authMiddleware, async (req, res) => {
 roomRouter.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const roomId = Number(req.params.id);
-    const userId = req.user?.id;
+    const userId = req.userId;
     if (!roomId || !userId) {
       return res.status(400).json({ error: 'Invalid room or user' });
     }
